@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.egao.common.system.mapper.OverallMapper">
+
+    <select id="selectOverall" resultType="java.util.HashMap">
+        select * from ga_overall
+        limit #{page}, #{rows}
+    </select>
+
+    <select id="selectOverallCount" resultType="java.lang.Integer">
+        select count(*) from ga_overall
+    </select>
+
+    <insert id="insertOverall">
+        insert into ga_overall(logisticCostRatio, goodsCostRatio
+        , refundRate, toolCostRatio, passCostRatio, operateCostRatio)
+        values(#{logisticCostRatio}, #{goodsCostRatio}
+        , #{refundRate}, #{toolCostRatio}, #{passCostRatio}, #{operateCostRatio})
+    </insert>
+
+    <update id="updateOverall">
+        update ga_overall
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="logisticCostRatio!=''">
+                logisticCostRatio = #{logisticCostRatio},
+            </if>
+            <if test="goodsCostRatio!=null and goodsCostRatio!=''">
+                goodsCostRatio = #{goodsCostRatio},
+            </if>
+            <if test="refundRate!=null and refundRate!=''">
+                refundRate = #{refundRate},
+            </if>
+            <if test="toolCostRatio!=null and toolCostRatio!=''">
+                toolCostRatio = #{toolCostRatio},
+            </if>
+            <if test="passCostRatio!=null and passCostRatio!=''">
+                passCostRatio = #{passCostRatio},
+            </if>
+            <if test="operateCostRatio!=null and operateCostRatio!=''">
+                operateCostRatio = #{operateCostRatio},
+            </if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        delete from ga_overall where id = #{id}
+    </delete>
+
+
+</mapper>

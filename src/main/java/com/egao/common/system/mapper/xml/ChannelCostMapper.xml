@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.egao.common.system.mapper.ChannelCostMapper">
+
+    <select id="selectChannelCost" resultType="java.util.HashMap">
+        select cci.* from(
+            select cc.*,items.name itemName,items.id itemsId from(
+                select cost.*,channel.source_name channelName,channel.id channelId from ga_channel_cost cost
+                left join ga_channel channel on cost.channel_id = channel.id
+                where cost.dates BETWEEN #{startTime} and #{endTime}
+                <if test="itemsId!=null and itemsId!=''">
+                    and cost.item_id = #{itemsId}
+                </if>
+            )cc LEFT JOIN ga_items items on items.id = cc.item_id
+        )cci INNER JOIN
+        (
+            select * from sys_user_item sui where sui.user_id = #{userId} /*筛选授权站点*/
+        )ui on ui.item_id = cci.itemsId
+        order by cci.dates desc
+        limit #{page}, #{rows}
+    </select>
+
+    <select id="selectChannelCostCount" resultType="java.lang.Integer">
+        select count(*) from(
+
+            select cci.* from(
+            select cc.*,items.name itemName,items.id itemsId from(
+                select cost.*,channel.source_name channelName,channel.id channelId from ga_channel_cost cost
+                left join ga_channel channel on cost.channel_id = channel.id
+                where cost.dates BETWEEN #{startTime} and #{endTime}
+                <if test="itemsId!=null and itemsId!=''">
+                    and cost.item_id = #{itemsId}
+                </if>
+            )cc LEFT JOIN ga_items items on items.id = cc.item_id
+            )cci INNER JOIN
+            (
+                select * from sys_user_item sui where sui.user_id = #{userId} /*筛选授权站点*/
+            )ui on ui.item_id = cci.itemsId
+
+        )ccis
+    </select>
+
+    <select id="selectChannelCostByChannelName" resultType="java.util.HashMap">
+        select * from ga_channel where source_name = #{channelName} and type = 0
+    </select>
+
+
+    <select id="selectChannelCostByItemIdAndChannelId" resultType="java.util.HashMap">
+        select * from ga_channel_cost where dates = #{dates} and item_id = #{item_id} and channel_id = #{channel_id}
+    </select>
+
+    <insert id="insertChannelCost" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        <selectKey resultType="int" order="AFTER" keyProperty="id">
+            SELECT LAST_INSERT_ID() as id
+        </selectKey>
+        insert into ga_channel_cost(dates, item_id, channel_id, cost)
+        values(#{dates}, #{item_id}, #{channel_id}, #{cost})
+    </insert>
+
+    <update id="updateChannelCost">
+        update ga_channel_cost
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="dates!=null and dates!=''">
+                dates = #{dates},
+            </if>
+            <if test="item_id!=null and item_id!=''">
+                item_id = #{item_id},
+            </if>
+            <if test="channel_id!=null and channel_id!=''">
+                channel_id = #{channel_id},
+            </if>
+            <if test="cost!=null and cost!=''">
+                cost = #{cost}
+            </if>
+        </trim>
+        where cost_id = #{costId}
+    </update>
+
+
+    <delete id="deleteChannelCostById">
+        delete from ga_channel_cost where cost_id = #{id}
+    </delete>
+
+    <select id="selectRevenue" resultType="java.lang.Float">
+        select sum(ad.revenue) from ga_ad ad LEFT JOIN ga_channel channel on ad.source = channel.source
+        where ad.create_time between #{startTime} and #{endTime}
+        <choose>
+            <when test="channelId!=null and channelId!= ''">
+                and channel.parent_id = #{channelId}
+            </when>
+            <otherwise>
+                and channel.id is null
+            </otherwise>
+        </choose>
+
+    </select>
+
+
+
+
+</mapper>

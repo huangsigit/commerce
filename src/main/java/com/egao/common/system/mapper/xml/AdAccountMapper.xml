@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.egao.common.system.mapper.AdAccountMapper">
+
+    <select id="selectAdAccountByType" resultType="java.util.HashMap">
+        select account.id value,account.ad_account name from ga_ad_account account
+        left join ga_item item on item.ad_account = account.id
+    	where account.type = #{type}
+    </select>
+
+    <select id="selectAdAccountByItemsId" resultType="java.util.HashMap">
+        select aa.id value, aa.ad_account name from ga_ad_account aa where aa.items_id = #{items_id}
+    </select>
+
+    <select id="selectAdAccountById" resultType="java.util.HashMap">
+        select * from ga_ad_account where id = #{id}
+    </select>
+
+    <insert id="insertAdAccount">
+        insert into ga_ad_account(id, items_id, ad_account, type) values(#{id}, #{items_id}, #{ad_account}, #{type})
+    </insert>
+
+    <delete id="deleteById">
+        delete from ga_ad_account where id = #{id}
+    </delete>
+
+
+
+
+
+
+</mapper>

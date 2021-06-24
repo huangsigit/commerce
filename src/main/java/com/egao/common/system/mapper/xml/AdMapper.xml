@@ -1,0 +1,493 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.egao.common.system.mapper.AdMapper">
+
+    <select id="selectAd" resultType="java.util.HashMap">
+        select
+        aic.itemsId,aic.job_number,aic.month
+        ,sum(aic.revenue) revenue,SUM(aic.cost) cost
+        ,sum((case when aic.logisticCostRatio is not null then aic.logisticCostRatio else overall.logisticCostRatio end)) as logisticCostRatio
+        ,sum((case when aic.goodsCostRatio is not null then aic.goodsCostRatio else overall.goodsCostRatio end)) as goodsCostRatio
+        ,sum((case when aic.refundRate is not null then aic.refundRate else overall.refundRate end)) as refundRate
+        ,sum((case when aic.toolCostRatio is not null then aic.toolCostRatio else overall.toolCostRatio end)) as toolCostRatio
+        ,sum((case when aic.passCostRatio is not null then aic.passCostRatio else overall.passCostRatio end)) as passCostRatio
+        ,sum((case when aic.operateCostRatio is not null then aic.operateCostRatio else overall.operateCostRatio end)) as operateCostRatio
+        from(
+                select ai.*
+                ,cost.logisticCostRatio logisticCostRatio
+                ,(ai.revenue*(cost.logisticCostRatio/100)) logisticCost
+                ,cost.goodsCostRatio goodsCostRatio
+                ,(ai.revenue*(cost.goodsCostRatio/100)) goodsCost
+                ,cost.refundRate refundRate
+                ,(ai.revenue*(cost.refundRate/100)) refund
+                ,cost.toolCostRatio toolCostRatio
+                ,(ai.revenue*(cost.toolCostRatio/100)) toolCost
+                ,cost.passCostRatio passCostRatio
+                ,(ai.revenue*(cost.passCostRatio/100)) passCost
+                ,cost.operateCostRatio operateCostRatio
+                ,(ai.revenue*(cost.operateCostRatio/100)) operateCost
+
+                from(
+                        select (case when item.item_id is null then ads.items_id else item.item_id end) as itemsId,ads.* from(
+                                        SELECT ad.items_id,ad.job_number,ad.ad_account,ad.create_time
+                                        ,date_format(ad.create_time, '%Y-%m') month,sum(ad.revenue) revenue,sum(ad.cost) cost
+                                        FROM ga_ad ad
+                                        where 1 = 1
+                                        <if test="itemsId!=null and itemsId!=''">
+                                            and ad.items_id = #{itemsId}
+                                        </if>
+                                        <if test="startTime!=null and endTime!=''">
+                                            and ad.create_time BETWEEN #{startTime} and #{endTime}
+                                        </if>
+                                        <if test="jobNumber!=null and jobNumber!=''">
+                                            and ad.job_number = #{jobNumber}
+                                        </if>
+                                        <if test="adChannel!=null and adChannel!=''">
+                                            and ad.source like '%${adChannel}%'
+                                        </if>
+
+                                        GROUP BY items_id,job_number,month order by month
+                        )ads LEFT JOIN ga_item item on item.ad_account = ads.ad_account and item.item_type = 1
+                        GROUP BY itemsId,ads.job_number,ads.month order by ads.month
+                )ai LEFT JOIN ga_cost cost on cost.item_id = ai.itemsId and cost.month = ai.month
+        )aic LEFT JOIN ga_overall overall on 1 = 1
+        GROUP BY itemsId,job_number order by revenue desc limit #{page}, #{rows}
+
+    </select>
+
+
+
+    <select id="selectAdCount" resultType="java.lang.Integer">
+        select count(*)
+        from(
+        select (case when item.item_id is null then ads.items_id else item.item_id end) as itemsId,ads.* from(
+        SELECT ad.items_id,ad.job_number,ad.ad_account,ad.create_time
+        ,date_format(ad.create_time, '%Y-%m') month,sum(ad.revenue) revenue,sum(ad.cost) cost
+        FROM ga_ad ad
+        where 1 = 1
+        <if test="itemsId!=null and itemsId!=''">
+            and ad.items_id = #{itemsId}
+        </if>
+        <if test="startTime!=null and endTime!=''">
+            and ad.create_time BETWEEN #{startTime} and #{endTime}
+        </if>
+        <if test="jobNumber!=null and jobNumber!=''">
+            and ad.job_number = #{jobNumber}
+        </if>
+        <if test="adChannel!=null and adChannel!=''">
+            and ad.source like '%${adChannel}%'
+        </if>
+        GROUP BY items_id,job_number,month order by month
+        )ads LEFT JOIN ga_item item on item.ad_account = ads.ad_account and item.item_type = 1
+        GROUP BY itemsId,ads.job_number,ads.month order by ads.month
+        )ai LEFT JOIN ga_cost cost on cost.item_id = ai.itemsId and cost.month = ai.month
+    </select>
+
+
+
+    <select id="selectAdItems" resultType="java.util.HashMap">
+        select create_time
+        ,sum(a.revenue) revenue
+        ,sum(a.cost) cost
+        ,sum(ads.logisticCost) logisticCost
+        ,sum(ads.goodsCost) goodsCost
+        ,sum(ads.operateCostRatio) operateCostRatio
+        ,sum(ads.refund) refund
+        ,sum(ads.toolCost) toolCost
+        ,sum(ads.passCost) passCost
+        from ga_ad a LEFT JOIN ga_ads ads on ads.items_id = a.items_id
+        where 1 = 1
+        <if test="startTime!=null and endTime!=''">
+            and a.create_time BETWEEN #{startTime} and #{endTime}
+        </if>
+        <if test="itemsId!=null and itemsId!=''">
+            and a.items_id = #{itemsId}
+        </if>
+<!--
+        <if test="jobNumber!=null and jobNumber!=''">
+            and a.job_number = #{jobNumber}
+        </if>
+-->
+
+        <choose>
+            <when test="jobNumber=='无工号'">
+                and LENGTH(trim(ad.job_number)) = 0
+            </when>
+            <when test="jobNumber!=null and jobNumber!=''">
+                and ad.job_number = #{jobNumber}
+            </when>
+        </choose>
+
+
+        <if test="adAccount!=null and adAccount!=''">
+            and a.ad_account = #{adAccount}
+        </if>
+        <if test="adChannel!=null and adChannel!=''">
+            and a.source like '%${adChannel}%'
+        </if>
+        group by a.create_time
+    </select>
+
+
+
+
+    <select id="selectAdChannel" resultType="java.util.HashMap">
+        select channel.parent_id,channel.source_name
+        ,aio.source,aio.ad_account
+        ,ifnull(sum(aio.revenue),0) revenue
+        ,ifnull(sum(aio.cost),0) cost
+
+        ,aio.logisticCostRatio logisticCostRatio
+        ,sum((aio.revenue*(aio.logisticCostRatio/100))) logisticCost
+        ,aio.goodsCostRatio goodsCostRatio
+        ,sum((aio.revenue*(aio.goodsCostRatio/100))) goodsCost
+        ,aio.refundRate refundRate
+        ,sum((aio.revenue*(aio.refundRate/100))) refund
+        ,aio.toolCostRatio toolCostRatio
+        ,sum((aio.revenue*(aio.toolCostRatio/100))) toolCost
+        ,aio.passCostRatio passCostRatio
+        ,sum((aio.revenue*(aio.passCostRatio/100))) passCost
+        ,aio.operateCostRatio operateCostRatio
+        ,sum((aio.revenue*(aio.operateCostRatio/100))) operateCost
+        from (
+                select
+                ai.source,ai.ad_account
+                ,ifnull(sum(ai.revenue),0) revenue
+                ,ifnull(sum(ai.cost),0) cost
+
+                ,overall.logisticCostRatio logisticCostRatio
+                ,(ai.revenue*(overall.logisticCostRatio/100)) logisticCost
+                ,overall.goodsCostRatio goodsCostRatio
+                ,(ai.revenue*(overall.goodsCostRatio/100)) goodsCost
+                ,overall.refundRate refundRate
+                ,(ai.revenue*(overall.refundRate/100)) refund
+                ,overall.toolCostRatio toolCostRatio
+                ,(ai.revenue*(overall.toolCostRatio/100)) toolCost
+                ,overall.passCostRatio passCostRatio
+                ,(ai.revenue*(overall.passCostRatio/100)) passCost
+                ,overall.operateCostRatio operateCostRatio
+                ,(ai.revenue*(overall.operateCostRatio/100)) operateCost
+                from(
+                        select
+                        ad.source
+                        ,ad.ad_account
+                        ,date_format(ad.create_time, '%Y-%m') month
+                        ,ifnull(sum(ad.revenue),0) revenue
+                        ,ifnull(sum(ad.cost),0) cost
+                        from
+                        ga_ad ad
+                        where 1 = 1
+                        <if test="startTime!=null and endTime!=''">
+                            and ad.create_time BETWEEN #{startTime} and #{endTime}
+                        </if>
+                        <if test="itemsId!=null and itemsId!=''">
+                            and ad.items_id = #{itemsId}
+                        </if>
+                        <if test="jobNumber!=null and jobNumber!=''">
+                            and ad.job_number = #{jobNumber}
+                        </if>
+                        <if test="adAccount!=null and adAccount!=''">
+                            and ad.ad_account = #{adAccount}
+                        </if>
+                        <if test="adChannel!=null and adChannel!=''">
+                            and ad.source like '%${adChannel}%'
+                        </if>
+                        GROUP BY ad.source,ad.ad_account,month ORDER BY ad.source desc
+                )ai LEFT JOIN ga_overall overall on 1 = 1
+                GROUP BY ai.source,ai.ad_account ORDER BY revenue desc
+        )aio LEFT JOIN ga_channel channel on channel.source = aio.source GROUP BY parent_id
+        order by cost desc
+        limit #{page}, #{rows}
+
+    </select>
+
+
+    <select id="selectAdChannelCount" resultType="java.lang.Integer">
+        select count(*) from (
+            select channel.parent_id,channel.source_name
+            ,aio.source,aio.ad_account
+            ,ifnull(sum(aio.revenue),0) revenue
+            ,ifnull(sum(aio.cost),0) cost
+            ,ifnull(sum(aio.logisticCost),0) logisticCost
+            ,ifnull(sum(aio.logisticCostRatio),0) logisticCostRatio
+            ,ifnull(sum(aio.goodsCost),0) goodsCost
+            ,ifnull(sum(aio.goodsCostRatio),0) goodsCostRatio
+            ,ifnull(sum(aio.operateCostRatio),0) operateCostRatio
+            ,ifnull(sum(aio.refund),0) refund
+            ,ifnull(sum(aio.refundRate),0) refundRate
+            ,ifnull(sum(aio.toolCost),0) toolCost
+            ,ifnull(sum(aio.toolCostRatio),0) toolCostRatio
+            ,ifnull(sum(aio.passCost),0) passCost
+            ,ifnull(sum(aio.passCostRatio),0) passCostRatio
+            from (
+            select
+            ai.source,ai.ad_account
+            ,ifnull(sum(ai.revenue),0) revenue
+            ,ifnull(sum(ai.cost),0) cost
+            ,ifnull(sum(overall.logisticCost),0) logisticCost
+            ,ifnull(sum(overall.logisticCostRatio),0) logisticCostRatio
+            ,ifnull(sum(overall.goodsCost),0) goodsCost
+            ,ifnull(sum(overall.goodsCostRatio),0) goodsCostRatio
+            ,ifnull(sum(overall.operateCostRatio),0) operateCostRatio
+            ,ifnull(sum(overall.refund),0) refund
+            ,ifnull(sum(overall.refundRate),0) refundRate
+            ,ifnull(sum(overall.toolCost),0) toolCost
+            ,ifnull(sum(overall.toolCostRatio),0) toolCostRatio
+            ,ifnull(sum(overall.passCost),0) passCost
+            ,ifnull(sum(overall.passCostRatio),0) passCostRatio
+            from(
+            select
+            ad.source
+            ,ad.ad_account
+            ,date_format(ad.create_time, '%Y-%m') month
+            ,ifnull(sum(ad.revenue),0) revenue
+            ,ifnull(sum(ad.cost),0) cost
+            from
+            ga_ad ad
+            where 1 = 1
+            <if test="startTime!=null and endTime!=''">
+                and ad.create_time BETWEEN #{startTime} and #{endTime}
+            </if>
+            <if test="itemsId!=null and itemsId!=''">
+                and ad.items_id = #{itemsId}
+            </if>
+            <if test="jobNumber!=null and jobNumber!=''">
+                and ad.job_number = #{jobNumber}
+            </if>
+            <if test="adAccount!=null and adAccount!=''">
+                and ad.ad_account = #{adAccount}
+            </if>
+            <if test="adChannel!=null and adChannel!=''">
+                and ad.source like '%${adChannel}%'
+            </if>
+            GROUP BY ad.source,ad.ad_account,month ORDER BY ad.source desc
+            )ai LEFT JOIN ga_overall overall on 1 = 1
+            GROUP BY ai.source,ai.ad_account ORDER BY revenue desc
+            )aio LEFT JOIN ga_channel channel on channel.source = aio.source GROUP BY parent_id
+        )aioc
+    </select>
+
+
+    <select id="selectAllSum" resultType="java.util.HashMap">
+        select
+        aico.itemsId,aico.job_number
+        ,ifnull(sum(aico.revenue),0) revenue
+        ,ifnull(sum(aico.cost),0) cost
+        ,ifnull(sum(aico.logisticCostRatio),0) logisticCostRatio
+        ,ifnull(sum(aico.goodsCostRatio),0) goodsCostRatio
+        ,ifnull(sum(aico.refundRate),0) refundRate
+        ,ifnull(sum(aico.toolCostRatio),0) toolCostRatio
+        ,ifnull(sum(aico.passCostRatio),0) passCostRatio
+        ,ifnull(sum(aico.operateCostRatio),0) operateCostRatio
+        ,ifnull(sum(aico.logisticCost),0) logisticCost
+        ,ifnull(sum(aico.goodsCost),0) goodsCost
+        ,ifnull(sum(aico.refund),0) refund
+        ,ifnull(sum(aico.toolCost),0) toolCost
+        ,ifnull(sum(aico.passCost),0) passCost
+        ,ifnull(sum(aico.operateCost),0) operateCost
+
+        ,ifnull(sum(aico.logisticCostRatioAll),0) logisticCostRatioAll
+        ,ifnull(sum(aico.goodsCostRatioAll),0) goodsCostRatioAll
+        ,ifnull(sum(aico.refundRateAll),0) refundRateAll
+        ,ifnull(sum(aico.toolCostRatioAll),0) toolCostRatioAll
+        ,ifnull(sum(aico.passCostRatioAll),0) passCostRatioAll
+        ,ifnull(sum(aico.operateCostRatioAll),0) operateCostRatioAll
+        ,ifnull(sum(aico.logisticCostAll),0) logisticCostAll
+        ,ifnull(sum(aico.goodsCostAll),0) goodsCostAll
+        ,ifnull(sum(aico.refundAll),0) refundAll
+        ,ifnull(sum(aico.toolCostAll),0) toolCostAll
+        ,ifnull(sum(aico.passCostAll),0) passCostAll
+        ,ifnull(sum(aico.operateCostAll),0) operateCostAll
+
+
+        from(
+
+                select
+                aic.itemsId,aic.job_number
+                ,aic.cost_id
+                ,sum(aic.revenue) revenue,sum(aic.cost) cost
+                ,sum(aic.logisticCostRatioItem) logisticCostRatio
+                ,sum(aic.goodsCostRatioItem) goodsCostRatio
+                ,sum(aic.refundRateItem) refundRate
+                ,sum(aic.toolCostRatioItem) toolCostRatio
+                ,sum(aic.passCostRatioItem) passCostRatio
+                ,sum(aic.operateCostRatioItem) operateCostRatio
+                ,sum(aic.logisticCostItem) logisticCost
+                ,sum(aic.goodsCostItem) goodsCost
+                ,sum(aic.refundItem) refund
+                ,sum(aic.toolCostItem) toolCost
+                ,sum(aic.passCostItem) passCost
+                ,sum(aic.operateCostItem) operateCost
+
+                ,(case when aic.cost_id is null then sum(overall.logisticCostRatio) else 0 end) logisticCostRatioAll
+                ,(case when aic.cost_id is null then sum(overall.goodsCostRatio) else 0 end) goodsCostRatioAll
+                ,(case when aic.cost_id is null then sum(overall.refundRate) else 0 end) refundRateAll
+                ,(case when aic.cost_id is null then sum(overall.toolCostRatio) else 0 end) toolCostRatioAll
+                ,(case when aic.cost_id is null then sum(overall.passCostRatio) else 0 end) passCostRatioAll
+                ,(case when aic.cost_id is null then sum(overall.operateCostRatio) else 0 end) operateCostRatioAll
+                ,(case when aic.cost_id is null then sum(overall.logisticCost) else 0 end) logisticCostAll
+                ,(case when aic.cost_id is null then sum(overall.goodsCost) else 0 end) goodsCostAll
+                ,(case when aic.cost_id is null then sum(overall.refund) else 0 end) refundAll
+                ,(case when aic.cost_id is null then sum(overall.toolCost) else 0 end) toolCostAll
+                ,(case when aic.cost_id is null then sum(overall.passCost) else 0 end) passCostAll
+                ,(case when aic.cost_id is null then sum(overall.operateCost) else 0 end) operateCostAll
+
+                from(
+                        select ai.*
+                        ,cost.cost_id
+                        ,cost.logisticCostRatio logisticCostRatioItem
+                        ,cost.goodsCostRatio goodsCostRatioItem
+                        ,cost.refundRate refundRateItem
+                        ,cost.toolCostRatio toolCostRatioItem
+                        ,cost.passCostRatio passCostRatioItem
+                        ,cost.operateCostRatio operateCostRatioItem
+
+                        ,cost.logisticCost logisticCostItem
+                        ,cost.goodsCost goodsCostItem
+                        ,cost.refund refundItem
+                        ,cost.toolCost toolCostItem
+                        ,cost.passCost passCostItem
+                        ,cost.operateCost operateCostItem
+                        from(
+                                select (case when item.item_id is null then ads.items_id else item.item_id end) as itemsId,ads.* from(
+                                        SELECT ad.items_id,ad.job_number,ad.ad_account,ad.create_time
+                                        ,date_format(ad.create_time, '%Y-%m') month,sum(ad.revenue) revenue,sum(ad.cost) cost
+                                        FROM ga_ad ad
+                                        where 1 = 1
+                                        <if test="startTime!=null and endTime!=''">
+                                            and ad.create_time BETWEEN #{startTime} and #{endTime}
+                                        </if>
+                                        <if test="jobNumber!=null and jobNumber!=''">
+                                            and ad.job_number = #{jobNumber}
+                                        </if>
+                                        <if test="adChannel!=null and adChannel!=''">
+                                            and ad.source like '%${adChannel}%'
+                                        </if>
+                                        GROUP BY items_id,job_number,month order by month
+                                )ads LEFT JOIN ga_item item on item.ad_account = ads.ad_account and item.item_type = 1
+                                GROUP BY itemsId,ads.job_number,ads.month order by ads.month
+                        )ai LEFT JOIN ga_cost cost on cost.item_id = ai.itemsId and cost.month = ai.month
+                )aic LEFT JOIN ga_overall overall on 1 = 1
+                GROUP BY itemsId,job_number order by month desc
+        )aico
+    </select>
+
+
+
+    <select id="selectAdByItemsId" resultType="java.util.HashMap">
+        select * from ga_ad where items_id = #{itemsId}
+    </select>
+
+    <insert id="insertAd">
+        insert into ga_ad(items_id, job_number, ad_account, ad_name, source, revenue, cost, type, create_time)
+        values(#{items_id}, #{job_number}, #{ad_account}, #{ad_name}, #{source}, #{revenue}, #{cost}, #{type}, #{create_time})
+    </insert>
+
+
+    <select id="selectAdAccountByItemsIdAndJobNumber" resultType="java.util.HashMap">
+        select * from ga_ad_account where items_id = #{itemsId} and job_number = #{jobNumber}
+    </select>
+
+
+    <insert id="insertAds">
+        insert into ga_ads(items_id, logisticCost, logisticCostRatio, goodsCost, goodsCostRatio, operateCostRatio
+        , refund, refundRate, toolCost, toolCostRatio, passCost, passCostRatio)
+        values(#{items_id}, #{logisticCost}, #{logisticCostRatio}, #{goodsCost}, #{goodsCostRatio}, #{operateCostRatio}
+        , #{refund}, #{refundRate}, #{toolCost}, #{toolCostRatio}, #{passCost}, #{passCostRatio})
+    </insert>
+
+    <update id="updateAds" parameterType="java.util.HashMap">
+        update ga_ads
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="logisticCost!=''">
+                logisticCost = #{logisticCost},
+            </if>
+            <if test="logisticCostRatio!=''">
+                logisticCostRatio = #{logisticCostRatio},
+            </if>
+            <if test="goodsCost!=null and goodsCost!=''">
+                goodsCost = #{goodsCost},
+            </if>
+            <if test="goodsCostRatio!=null and goodsCostRatio!=''">
+                goodsCostRatio = #{goodsCostRatio},
+            </if>
+            <if test="operateCostRatio!=null and operateCostRatio!=''">
+                operateCostRatio = #{operateCostRatio},
+            </if>
+            <if test="refund!=null and refund!=''">
+                refund = #{refund},
+            </if>
+            <if test="refundRate!=null and refundRate!=''">
+                refundRate = #{refundRate},
+            </if>
+            <if test="toolCost!=null and toolCost!=''">
+                toolCost = #{toolCost},
+            </if>
+            <if test="toolCostRatio!=null and toolCostRatio!=''">
+                toolCostRatio = #{toolCostRatio},
+            </if>
+            <if test="passCost!=null and passCost!=''">
+                passCost = #{passCost},
+            </if>
+            <if test="passCostRatio!=null and passCostRatio!=''">
+                passCostRatio = #{passCostRatio}
+            </if>
+        </trim>
+        where items_id = #{itemsId}
+    </update>
+
+    <select id="selectAdsByItemsId" resultType="java.util.HashMap">
+        select * from ga_ads where items_id = #{itemsId}
+    </select>
+
+    <select id="selectAdGroupByJobNumber" resultType="java.util.HashMap">
+        select
+        ai.itemsId items_id,ai.ad_account
+        ,(case when LENGTH(trim(ai.job_number))>0 then ai.job_number else '无工号' end) job_number
+        from(
+        SELECT
+        ad.items_id items_id
+        ,ad.job_number,ad.ad_account
+        ,(case when item.item_id is null then ad.items_id else item.item_id end) as itemsId
+        FROM ga_ad ad LEFT JOIN ga_item item on item.ad_account = ad.ad_account
+        and IF(ad.ad_account = '(not set)', item.item_id = ad.items_id, 1 = 1)
+        where 1 = 1
+        <if test="jobNumber!=null and jobNumber!=''">
+            and ad.job_number = #{jobNumber}
+        </if>
+        group by ad.items_id,ad.job_number
+        )ai LEFT JOIN ga_items items on items.id = ai.itemsId
+        where ai.itemsId = #{itemsId}
+        group by ai.job_number
+    </select>
+
+
+    <select id="selectAdGroupByAdAccount" resultType="java.util.HashMap">
+        SELECT item.item_id items_id,ad.job_number,ad.ad_account FROM ga_ad ad LEFT JOIN ga_item item on item.ad_account = ad.ad_account
+        where item.item_id = #{itemsId} and ad.job_number = #{jobNumber} group by ad.ad_account
+    </select>
+
+
+    <delete id="deleteByType">
+        delete from ga_ad where create_time = #{create_time} and type = #{type}
+    </delete>
+
+    <delete id="deleteByItemsId">
+        delete from ga_ad where create_time = #{create_time} and type = #{type} and items_id = #{items_id}
+    </delete>
+
+    <delete id="deleteByAdAccount">
+        delete from ga_ad where create_time = #{create_time} and type = #{type} and ad_account = #{ad_account}
+    </delete>
+
+    <select id="selectAMonthRevenue" resultType="java.lang.Float">
+        select sum(ad.revenue) from ga_ad ad LEFT JOIN ga_item item on item.ad_account = ad.ad_account
+        where item.item_id = #{itemsId}
+        and ad.create_time between #{startTime} and #{endTime}
+    </select>
+
+    <select id="selectAdAccountGroupByItemsId" resultType="java.util.HashMap">
+        select ad_account value, ad_account name from ga_ad where items_id = #{itemsId} group by ad_account
+    </select>
+
+</mapper>

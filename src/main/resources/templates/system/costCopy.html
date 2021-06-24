@@ -1,0 +1,884 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <:include file="../common/css.html" title="用户管理"/>
+</head>
+<body>
+<style>
+    .layui-form-label{
+        width: 100px;
+    }
+    .layui-input-block {
+        margin-left: 130px;
+        min-height: 36px
+    }
+</style>
+
+<!-- 正文开始 -->
+<div class="layui-fluid" lay-filter="searchForm">
+    <div class="layui-card">
+        <div class="layui-card-body">
+            <!-- 表格工具栏 -->
+
+            <form class="layui-form toolbar" lay-filter="userTbSearchForm">
+
+                <div class="layui-form-item">
+                    <!--
+
+                                        <div class="layui-inline">
+                                            <label class="layui-form-label">账&emsp;号:</label>
+                                            <div class="layui-input-inline">
+                                                <input name="username" class="layui-input" placeholder="输入账号"/>
+                                            </div>
+                                        </div>
+                                        <div class="layui-inline">
+                                            <label class="layui-form-label">用户名:</label>
+                                            <div class="layui-input-inline">
+                                                <input name="nickName" class="layui-input" placeholder="输入用户名"/>
+                                            </div>
+                                        </div>
+                                        <div class="layui-inline">&emsp;
+                                            <button class="layui-btn icon-btn" lay-filter="userTbSearch" lay-submit>
+                                                <i class="layui-icon">&#xe615;</i>搜索
+                                            </button>
+                                        </div>
+                    -->
+
+
+                    <!--
+                                        <div class="layui-inline">
+                                        <label class="layui-form-label w-auto">站点：</label>
+                                        <div class="layui-input-inline">
+                                            <select name="itemsId"  lay-filter="itemsId" id="itemsId" lay-search>
+                                            </select>
+                                        </div>
+                                        </div>
+
+                                        <div class="layui-inline">
+                                        <label class="layui-form-label w-auto">工号：</label>
+                                        <div class="layui-input-inline">
+                                            <select name="jobNumber" lay-filter="jobNumber" id="jobNumber" placeholder="请输入工号" lay-search>
+                                            </select>
+                                        </div>
+                                        </div>
+
+                                        <div class="layui-inline">
+                                        <label class="layui-form-label w-auto">广告账户：</label>
+                                        <div class="layui-input-inline">
+                                            <select name="adAccount" lay-filter="adAccount" id="adAccount" placeholder="请输入广告账户" lay-search>
+                                            </select>
+                                        </div>
+                                        </div>
+
+                                        <div class="layui-inline">
+                                            <label class="layui-form-label w-auto">广告渠道：</label>
+                                            <div class="layui-input-inline">
+                                                <input id="adChannels" name="adChannel" lay-filter="adChannel" class="layui-input" type="text" placeholder="广告渠道" lay-search/>
+                                            </div>
+                                        </div>
+                    -->
+
+                    <div class="layui-inline">
+                        <label class="layui-form-label">年月范围：</label>
+                        <div class="layui-input-inline">
+                            <input type="text" class="layui-input" id="searchTime" name="searchTime" placeholder="默认查询一周数据" lay-search>
+                        </div>
+                    </div>
+
+                    <div class="layui-inline">
+                        <button class="layui-btn icon-btn" lay-filter="userTbSearch" lay-submit>
+                            <i class="layui-icon">&#xe615;</i>搜索
+                        </button>
+                        <!--<button id="clearBtn" class="layui-btn icon-btn" lay-filter="clearBtn" lay-submit><i class="layui-icon">&#xe654;</i>清空</button>-->
+                        <!--<button id="addBtn" class="layui-btn icon-btn"><i class="layui-icon">&#xe654;</i>添加</button>-->
+                    </div>
+
+                </div>
+            </form>
+
+            <!-- 数据表格 -->
+            <table id="channelDataTable" lay-filter="channelDataTable"></table>
+        </div>
+    </div>
+</div>
+
+<!-- 表格操作列 -->
+<script type="text/html" id="userTbBar">
+    <a class="layui-btn layui-btn-primary layui-btn-xs" lay-event="edit">修改</a>
+    <a class="layui-btn layui-btn-danger layui-btn-xs"
+       data-dropdown="#userTbDelDrop{{d.LAY_INDEX}}" no-shade="true">删除</a>
+    <!--<a class="layui-btn layui-btn-xs" lay-event="reset">重置密码</a>-->
+    <div class="dropdown-menu-nav dropdown-popconfirm dropdown-top-right layui-hide"
+         id="userTbDelDrop{{d.LAY_INDEX}}"
+         style="max-width: 200px;white-space: normal;min-width: auto;margin-left: 10px;">
+        <div class="dropdown-anchor"></div>
+        <div class="dropdown-popconfirm-title">
+            <i class="layui-icon layui-icon-help"></i>
+            <!--确定要删除{{d.nickName}}吗？-->
+            确定要删除吗？
+        </div>
+        <div class="dropdown-popconfirm-btn">
+            <a class="layui-btn" btn-cancel>取消</a>
+            <a class="layui-btn layui-btn-normal" lay-event="del">确定</a>
+        </div>
+    </div>
+</script>
+<!-- 表格状态列 -->
+<script type="text/html" id="userTbState">
+    <input type="checkbox" lay-filter="userTbStateCk" value="{{d.userId}}" lay-skin="switch"
+           lay-text="正常|锁定" {{d.state==0?'checked':''}}/>
+</script>
+<!-- 表单弹窗 -->
+<script type="text/html" id="editFormDialog">
+    <form id="editForm" lay-filter="editForm" class="layui-form model-form">
+
+        <input name="id" type="hidden"/>
+
+        <!--
+                <div class="layui-form-item">
+                    <label class="layui-form-label">站点</label>
+                    <div class="layui-input-block">
+                        <select name="itemsIdSearch" id="itemsIdSearch" lay-filter="itemsIdSearch"></select>
+                    </div>
+                </div>
+        -->
+
+
+        <div class="layui-form-item">
+            <label class="layui-form-label">月份</label>
+            <div class="layui-input-block">
+                <input name="month" type="text" class="layui-input" id="monthId" placeholder="yyyy-MM">
+            </div>
+        </div>
+
+
+        <div class="layui-form-item">
+            <label class="layui-form-label">物流成本</label>
+            <div class="layui-input-block">
+                <input name="logisticCost" placeholder="请输入物流成本" type="text" class="layui-input"
+                       maxlength="80"/>
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+
+            <label class="layui-form-label">物流成本占比</label>
+            <div class="layui-input-block">
+                <input name="logisticCostRatio" placeholder="请输入物流成本占比" type="text" class="layui-input"
+                       maxlength="80"/>
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+            <label class="layui-form-label">商品成本</label>
+            <div class="layui-input-block">
+                <input name="goodsCost" placeholder="请输入商品成本" type="text" class="layui-input"
+                       maxlength="80"/>
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+            <label class="layui-form-label">商品成本占比</label>
+            <div class="layui-input-block">
+                <input name="goodsCostRatio" placeholder="请输入商品成本占比" type="text" class="layui-input"
+                       maxlength="80"/>
+            </div>
+        </div>
+
+
+        <div class="layui-form-item">
+            <label class="layui-form-label">退款</label>
+            <div class="layui-input-block">
+                <input name="refund" placeholder="请输入退款" type="text" class="layui-input"
+                       maxlength="80"/>
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+            <label class="layui-form-label">退款率</label>
+            <div class="layui-input-block">
+                <input name="refundRate" placeholder="请输入退款率" type="text" class="layui-input"
+                       maxlength="80"/>
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+            <label class="layui-form-label">工具成本</label>
+            <div class="layui-input-block">
+                <input name="toolCost" placeholder="请输入工具成本" type="text" class="layui-input"
+                       maxlength="80"/>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">工具成本占比</label>
+            <div class="layui-input-block">
+                <input name="toolCostRatio" placeholder="请输入工具成本占比" type="text" class="layui-input"
+                       maxlength="80"/>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">通道成本</label>
+            <div class="layui-input-block">
+                <input name="passCost" placeholder="请输入通道成本" type="text" class="layui-input"
+                       maxlength="80"/>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">通道成本占比</label>
+            <div class="layui-input-block">
+                <input name="passCostRatio" placeholder="请输入通道成本占比" type="text" class="layui-input"
+                       maxlength="80"/>
+            </div>
+        </div>
+
+
+        <div class="layui-form-item">
+            <label class="layui-form-label">运营成本</label>
+            <div class="layui-input-block">
+                <input name="operateCost" placeholder="请输入运营成本" type="text" class="layui-input"
+                       maxlength="80"/>
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+            <label class="layui-form-label">运营成本占比</label>
+            <div class="layui-input-block">
+                <input name="operateCostRatio" placeholder="请输入运营成本占比" type="text" class="layui-input"
+                       maxlength="80"/>
+            </div>
+        </div>
+
+
+
+        <!--
+
+                <div class="layui-form-item text-right">
+                    <button class="layui-btn" lay-filter="userEditSubmit" lay-submit>保存</button>
+                    <button class="layui-btn layui-btn-primary" type="button" ew-event="closeDialog">取消</button>
+                </div>
+        -->
+
+        <div class="layui-form-item text-right">
+            <button class="layui-btn layui-btn-primary" type="button" ew-event="closeDialog">取消</button>
+            <button class="layui-btn" lay-filter="userEditSubmit" lay-submit>保存</button>
+        </div>
+
+
+
+    </form>
+</script>
+<:include file="../common/js.html"/>
+<script>
+    layui.use(['layer', 'form', 'table', 'tableX', 'util', 'admin', 'xmSelect', 'formX', 'dropdown', 'upload', 'laydate'], function () {
+        var $ = layui.jquery;
+        var layer = layui.layer;
+        var form = layui.form;
+        var table = layui.table;
+        var tableX = layui.tableX;
+        var util = layui.util;
+        var admin = layui.admin;
+        var xmSelect = layui.xmSelect;
+        var laydate = layui.laydate;
+        var sites = [];  // 全部站点
+
+        /*
+        var roleList = JSON.parse('${rolesJson!}').map(function (d) {
+            return {name: d.roleName, value: d.roleId}
+        });
+*/
+        /* 渲染表格 */
+        var insTb = tableX.render({
+            elem: '#channelDataTable',
+            url: 'cost/page',
+            page: true,
+            // height: 'full-100',
+            toolbar: ['<p>',
+                // '<button lay-event="add" class="layui-btn layui-btn-sm icon-btn"><i class="layui-icon">&#xe654;</i>添加</button>&nbsp;',
+                '<button lay-event="add" class="layui-btn layui-btn-primary layui-btn-sm layui-btn-radius"><i class="layui-icon">&#xe654;</i>添加</button>&nbsp;',
+                // '<button lay-event="del" class="layui-btn layui-btn-sm layui-btn-danger icon-btn"><i class="layui-icon">&#xe640;</i>删除</button>&nbsp;',
+                // '<button lay-event="import" class="layui-btn layui-btn-sm layui-btn-warm icon-btn"><i class="layui-icon">&#xe681;</i>导入</button>',
+                '</p>'].join(''),
+            cellMinWidth: 100,
+            // totalRow: true,
+            done: function (res, curr, count) {
+
+                // getSites();
+                // lineChartInit(res.lineData.legendData, res.lineData.xAxisData, res.lineData.seriesData);
+
+            },
+            cols: [[
+                // {type: 'checkbox'},
+                // {type: 'numbers'},
+                /*
+                                {field: 'itemsName', title: '站点', sort: true, totalRowText: '合计'},
+                                {field: 'job_number', title: '工号', sort: true, width : 70, totalRow: true},
+                                {field: 'ad_account', title: '广告账户', sort: true, totalRow: true},
+                */
+
+
+                /*
+                                {field: 'source', title: '广告渠道', sort: true, totalRowText: '全部页汇总'},
+                                {field: 'revenue', title: '收入', sort: true},
+                                {field: 'cost', title: '广告成本', sort: true},
+                */
+
+                // {field: 'roas', title: 'ROAS', sort: true},
+                // {field: 'costProportion', title: '广告成本占比', sort: true},
+
+
+
+
+                {field: 'month', title: '月份', width:90, sort: true},
+
+                {field: 'logisticCost', title: '物流成本', sort: true},
+                {field: 'logisticCostRatio', title: '物流成本占比', sort: true},
+                {field: 'goodsCost', title: '商品成本', sort: true},
+                {field: 'goodsCostRatio', title: '商品成本占比', sort: true},
+                {field: 'refund', title: '退款', sort: true},
+                {field: 'refundRate', title: '退款率', sort: true},
+                {field: 'toolCost', title: '工具成本', sort: true},
+                {field: 'toolCostRatio', title: '工具成本占比', sort: true},
+                {field: 'toolCost', title: '通道成本', sort: true},
+                {field: 'toolCostRatio', title: '通道成本占比', sort: true},
+                {field: 'operateCost', title: '运营成本', sort: true},
+                {field: 'operateCostRatio', title: '运营成本占比', sort: true},
+
+
+
+
+                // {field: 'profit', title: '利润', sort: true},
+                // {field: 'xxx', title: '利润率', sort: true},
+                // {field: 'create_time', title: '日期', sort: true, width : 100},
+                {title: '操作', toolbar: '#userTbBar', align: 'center', minWidth: 200, fixed: 'right'}
+            ]]
+        });
+
+        /* 表格搜索 */
+        form.on('submit(userTbSearch)', function (data) {
+            insTb.reload({where: data.field, page: {curr: 1}});
+            return false;
+        });
+
+        // 清空
+        form.on('submit(clearBtn)', function (data) {
+
+            console.log("清空...")
+            //执行清空
+            $("#itemsId").empty();
+            $("#jobNumber").empty();
+            $("#adAccount").empty();
+            // $("#adChannels").empty();
+            $("#adChannels").val("");
+            $("#searchTime").val(""); // 清空日期
+            // form.render("select");
+
+            // layui.form.render("select");//重新渲染 固定写法
+
+            getSites(sitesData);
+
+
+            form.render("select");//重新渲染 固定写法
+
+        });
+
+        /* 表格工具条点击事件 */
+        table.on('tool(channelDataTable)', function (obj) {
+            if ('edit' === obj.event) { // 修改
+                showEditModel(obj.data);
+            } else if ('del' === obj.event) { // 删除
+                doDel(obj);
+            } else if ('reset' === obj.event) { // 重置密码
+                admin.prompt({formType: 1, title: '请输入密码'}, function (value, i) {
+                    layer.close(i);
+                    var loadIndex = layer.load(2);
+                    $.post('user/psw/reset', {id: obj.data.userId, password: value}, function (res) {
+                        layer.close(loadIndex);
+                        if (0 === res.code) {
+                            layer.msg(res.msg, {icon: 1});
+                        } else {
+                            layer.msg(res.msg, {icon: 2, anim: 6});
+                        }
+                    });
+                });
+            }
+        });
+
+        /* 表格头工具栏点击事件 */
+        table.on('toolbar(channelDataTable)', function (obj) {
+            if ('add' === obj.event) { // 添加
+                showEditModel();
+            } /*else if ('del' === obj.event) { // 删除
+                var checkRows = table.checkStatus('channelDataTable');
+                if (!checkRows || !checkRows.data || 0 === checkRows.data.length) {
+                    return layer.msg('请选择要删除的数据', {icon: 2, anim: 6});
+                }
+                var ids = checkRows.data.map(function (d) {
+                    return d.userId;
+                });
+                doDel({ids: ids});
+            }*/ else if ('import' === obj.event) {
+                showImport();
+            }
+        });
+
+        /* 显示表单弹窗 */
+        function showEditModel(mData) {
+            admin.open({
+                type: 1,
+                // area: '500px',
+                offset: '20px',
+                title: (mData ? '修改' : '添加') + '数据',
+                content: $('#editFormDialog').html(),
+                success: function (layero, dIndex) {
+                    $(layero).children('.layui-layer-content').css('overflow', 'visible');
+                    // if (mData) $(layero).find('[name="password"]').parent().parent().remove();
+                    // 回显表单数据
+                    form.val('editForm', mData);
+
+                    console.log("showEditModel sitesData:"+JSON.stringify(sitesData))
+                    // getSites(sitesData); // 加载站点
+
+                    //年月选择器
+                    laydate.render({
+                        elem: '#monthId'
+                        ,type: 'month'
+                    });
+
+
+                    // 表单提交事件
+                    form.on('submit(userEditSubmit)', function (data) {
+                        // data.field.roleIds = insRoleSel.getValue('value');
+
+                        console.log("JSON.stringify(data.field):"+JSON.stringify(data.field))
+                        var loadIndex = layer.load(2);
+                        // admin.req(mData ? 'itemsData/update' : 'itemsData/add', JSON.stringify(data.field), function (res) {
+                        // admin.req('itemsData/add', JSON.stringify(data.field), function (res) {
+                        // admin.req('itemsData/add', {logisticCost:data.field.logisticCost, logisticCostRatio:data.field.logisticCostRatio}, function (res) {
+
+                        /*
+                                                admin.req(mData ? 'cost/update' : 'cost/add', data.field, function (res) {
+                                                    layer.close(loadIndex);
+                                                    console.log("showEditModel res:"+JSON.stringify(res));
+                                                    if (0 === res.code) {
+                                                        layer.close(dIndex);
+                                                        layer.msg(res.msg, {icon: 1});
+                                                        // insTb.reload({page: {curr: 1}});
+                                                    } else {
+                                                        layer.msg(res.msg, {icon: 2, anim: 6});
+                                                    }
+                                                }, 'POST');
+                        */
+
+
+                        admin.req(mData ? 'cost/update' : 'cost/add', data.field, function (res) {
+                            layer.close(loadIndex);
+                            if (0 === res.code) {
+                                layer.close(dIndex);
+                                layer.msg(res.msg, {icon: 1});
+                                insTb.reload({page: {curr: 1}});
+                            } else {
+                                layer.msg(res.msg, {icon: 2, anim: 6});
+                            }
+                        }, 'post');
+
+
+
+                        /*
+
+                                                admin.req({
+                                                    type: "POST"
+                                                    , url: 'itemsData/add' //实际使用请改成服务端真实接口
+                                                    , data: data.field
+                                                    , done: function (res) {
+                                                        // layer.close(loadIndex);
+                                                        console.log("showEditModel res:"+JSON.stringify(res));
+                                                        if (0 === res.code) {
+                                                            layer.close(dIndex);
+                                                            layer.msg(res.msg, {icon: 1});
+                                                            insTb.reload({page: {curr: 1}});
+                                                        } else {
+                                                            layer.msg(res.msg, {icon: 2, anim: 6});
+                                                        }
+                                                    }
+                                                },"POST")
+                        */
+
+                        return false;
+                    });
+
+
+
+                    // 渲染多选下拉框
+                    /*
+                    var insRoleSel = xmSelect.render({
+                        el: '#userEditRoleSel',
+                        // name: 'userEditRoleSel',
+                        layVerify: 'required',
+                        layVerType: 'tips',
+                        // data: roleList
+                    });
+                    */
+                    // 回显选中角色
+                    /*if (mData && mData.roles) {
+                        insRoleSel.setValue(mData.roles.map(function (item) {
+                            return item.roleId;
+                        }));
+                    }*/
+                    // 禁止弹窗出现滚动条
+                    // $(layero).children('.layui-layer-content').css('overflow', 'visible');
+                }
+            });
+        }
+
+        /* 删除 */
+        function doDel(obj) {
+            if (obj.ids) {
+                admin.confirm('确定要删除选中数据吗？', function (i) {
+                    layer.close(i);
+                    var loadIndex = layer.load(2);
+                    admin.req('cost/update', JSON.stringify(obj.ids), function (res) {
+                        layer.close(loadIndex);
+                        if (0 === res.code) {
+                            layer.msg(res.msg, {icon: 1});
+                            insTb.reload({page: {curr: 1}});
+                        } else {
+                            layer.msg(res.msg, {icon: 2, anim: 6});
+                        }
+                    }, 'post');
+                });
+            } else {
+                var loadIndex = layer.load(2);
+                // $.get('cost/delete', {id: obj.data.userId}, function (res) {
+                $.get('cost/delete', {month: obj.data.month}, function (res) {
+                    layer.close(loadIndex);
+                    if (0 === res.code) {
+                        layer.msg(res.msg, {icon: 1});
+                        insTb.reload({page: {curr: 1}});
+                    } else {
+                        layer.msg(res.msg, {icon: 2, anim: 6});
+                    }
+                });
+            }
+        }
+
+        /* 修改用户状态 */
+        /*
+        form.on('switch(userTbStateCk)', function (obj) {
+            var loadIndex = layer.load(2);
+            $.post('user/state/update', {
+                id: obj.elem.value,
+                state: obj.elem.checked ? 0 : 1
+            }, function (res) {
+                layer.close(loadIndex);
+                if (0 === res.code) {
+                    layer.msg(res.msg, {icon: 1});
+                } else {
+                    layer.msg(res.msg, {icon: 2, anim: 6});
+                    $(obj.elem).prop('checked', !obj.elem.checked);
+                    form.render('checkbox', $('#channelDataTable').next().attr('lay-filter'));
+                }
+            });
+        });
+*/
+        /* 导入excel */
+        function showImport() {
+            admin.open({
+                type: 1,
+                title: '导入用户',
+                content: ['<div style="padding: 20px 0 10px 0;text-align: center;" class="layui-text">',
+                    '         <div id="userUploadDrag" class="layui-upload-drag" style="margin-bottom: 10px;">',
+                    '            <i class="layui-icon">&#xe681;</i>',
+                    '            <p>点击上传，或将文件拖拽到此处</p>',
+                    '         </div>',
+                    '         <div><a href="${ctxPath}/assets/file/用户导入模板.xlsx" target="_blank" download>下载模板</a></div>',
+                    '      </div>'].join(''),
+                success: function (layero, dIndex) {
+                    layui.upload.render({
+                        elem: '#userUploadDrag',
+                        url: 'user/import',
+                        accept: 'file',
+                        exts: 'xls|xlsx',
+                        before: function (obj) {
+                            layer.load(2);
+                        },
+                        done: function (res) {
+                            layer.closeAll('loading');
+                            if (0 === res.code) {
+                                layer.msg(res.msg, {icon: 1});
+                                layer.close(dIndex);
+                                insTb.reload({page: {curr: 1}});
+                            } else {
+                                admin.alert(res.msg.replace(/\r\n/g, '<br/>'), {icon: 2, anim: 6, title: '导入失败'});
+                            }
+                        },
+                        error: function () {
+                            layer.msg('导入失败', {icon: 2, anim: 6});
+                            layer.closeAll('loading');
+                        }
+                    });
+                }
+            });
+        }
+
+
+
+        // 日期范围
+        laydate.render({
+            elem: '#searchTime'
+            ,type: 'month'
+            ,range: true
+            // ,eventElem: '#searchSubmitMenu'
+            // ,trigger: 'click'
+            ,value: getDate(new Date().getTime()-(31536000000)) +" - "+ getDate(new Date().getTime()-(86400000)) // 2020-04-01 - 2020-04-04
+            ,isInitValue: true
+            ,done: function(value, date){
+                console.log('你选择的日期是：' + value + '<br>获得的对象是' + JSON.stringify(date));
+                $('#searchTime').val(value);
+
+            }
+        });
+
+        function getDate(timeStamp){
+            var date = new Date(timeStamp);
+
+            var year = date.getFullYear(); //获取完整的年份(4位)
+
+            var month = date.getMonth() + 1; //获取当前月份(0-11,0代表1月)
+            month = month<10?"0"+month:month
+
+            var date = date .getDate(); //获取当前日(1-31)
+            date = date<10?"0"+date:date
+
+            // var result = year + "-" + month + "-" + date;
+            var result = year + "-" + month;
+
+            return result;
+        }
+
+        function getJobNumber(data){
+
+            console.log("getJobNumber data:"+data)
+
+            form.on('select(itemsId)', function(data){
+
+                console.log("点了站点："+data.value)
+
+                var itemsId = data.value;
+                admin.req('itemsData/getJob', {itemsId:data.value}, function (res) {
+                    console.log("res:"+JSON.stringify(res))
+                    if (res.code == 0) {
+
+                        console.log("data:"+JSON.stringify(res.data))
+
+                        var $select = $('[lay-filter="searchForm"] select[name="jobNumber"]');
+                        $select.html('<option value="">请选择工号</option>');
+
+
+                        if(res.data.length > 0){
+                            for (var i = 0; i < res.data.length; i++) {
+                                $select.append('<option value="' + res.data[i].job_number + '">' + res.data[i].job_number + '</option>');
+                            }
+                        }else{
+                            // 清空工号
+                            $select.empty();
+                        }
+
+                        // 清空广告账户
+                        var adAccountSelect = $('[lay-filter="searchForm"] select[name="adAccount"]');
+                        adAccountSelect.empty();
+
+                        layui.form.render("select");//重新渲染 固定写法
+
+                        form.on('select(jobNumber)', function(data){
+
+                            console.log("点了工号J："+JSON.stringify(data))
+
+                            admin.req('itemsData/getAdAccount', {itemsId:itemsId,jobNumber:data.value}, function (res) {
+                                console.log("res:"+JSON.stringify(res))
+                                if (res.code == 0) {
+
+                                    console.log("data:"+JSON.stringify(res.data))
+
+                                    var $select = $('[lay-filter="searchForm"] select[name="adAccount"]');
+                                    $select.html('<option value="">请选择广告账户</option>');
+
+                                    for (var i = 0; i < res.data.length; i++) {
+                                        $select.append('<option value="' + res.data[i].ad_account + '">' + res.data[i].ad_account + '</option>');
+                                    }
+                                    layui.form.render("select");//重新渲染 固定写法
+
+                                } else {
+                                    layer.msg(res.msg, {icon: 2});
+                                }
+                            }, 'GET');
+                        });
+
+                    } else {
+                        layer.msg(res.msg, {icon: 2});
+                    }
+                }, 'GET');
+
+            });
+
+        }
+
+
+        var sitesData;
+        function getSites(sitesParam){
+
+            console.log("sitesData:"+JSON.stringify(sitesParam))
+
+
+            if(sitesParam){ // 清空不需要请求接口重新获取
+
+                console.log("不需要请求接口...")
+                sites = sitesParam;
+                var $select = $('[lay-filter="searchForm"] select[name="itemsId"]');
+                $select.html('<option value="">请选择</option>');
+                for (var i = 0; i < sites.length; i++) {
+                    $select.append('<option value="' + sites[i].id + '">' + sites[i].name + '</option>');
+                }
+
+                var $select2 = $('[lay-filter="editForm"] select[name="itemsIdSearch"]');
+                console.log("select2："+JSON.stringify($select2))
+                $select2.html('<option value="">请选择</option>');
+                for (var i = 0; i < sites.length; i++) {
+                    $select2.append('<option value="' + sites[i].id + '">' + sites[i].name + '</option>');
+                }
+
+                getJobNumber(sites);
+
+                layui.form.render("select");//重新渲染 固定写法
+
+            }else{ // 初始化
+
+                console.log("请求接口...")
+                admin.req('itemsData/getSite', {}, function (res) {
+                    // admin.removeLoading('div[lay-hash="/system/lzgame"]');
+
+                    sites = JSON.parse(res.data);
+                    console.log("sitesData:"+JSON.stringify(sites))
+
+                    sitesData = sites;
+
+                    console.log("获取全部站点1："+sites)
+                    console.log("类型是："+typeof sites)
+
+
+                    // var $select = $('[lay-filter="searchForm"] select[name="itemsIdSearch"]');
+                    var $select = $('[lay-filter="searchForm"] select[name="itemsId"]');
+                    console.log("select："+JSON.stringify($select))
+                    $select.html('<option value="">请选择</option>');
+                    for (var i = 0; i < sites.length; i++) {
+                        $select.append('<option value="' + sites[i].id + '">' + sites[i].name + '</option>');
+                    }
+
+                    var $select2 = $('[lay-filter="editForm"] select[name="itemsIdSearch"]');
+                    console.log("select2："+JSON.stringify($select2))
+                    $select2.html('<option value="">请选择</option>');
+                    for (var i = 0; i < sites.length; i++) {
+                        $select2.append('<option value="' + sites[i].id + '">' + sites[i].name + '</option>');
+                    }
+
+                    getJobNumber(sites);
+                    layui.form.render("select");//重新渲染 固定写法
+
+                }, 'get');
+            }
+        }
+
+
+
+        function lineChartInit(legendData, xAxisData, seriesData) {
+            var myChart = echarts.init(document.getElementById('lineChartx'));
+            $('#lineChart').resize(function(){
+                myChart.resize();
+            });
+            console.log("lineChartInit legendData:"+legendData)
+            // 指定图表的配置项和数据
+            option = {
+                // title: {
+                //     text: ''
+                // },
+                tooltip: {
+                    trigger: 'axis'
+                },
+                legend: {
+                    data: legendData // ['收入', '联盟广告', '视频广告', '直接访问', '搜索引擎']
+                    // data: ['邮件营销', '联盟广告', '视频广告']
+                    // data: ['收入', '广告成本', 'ROAS']
+                    ,selected:{
+                        '广告成本': false,
+                        '物流成本': false,
+                        '商品成本': false,
+                        '运营成本': false,
+                        '退款': false,
+                        '工具成本': false,
+                        '通道成本': false,
+                        '利润': false
+                    }
+                },
+                grid: {
+                    left: '3%',
+                    right: '4%',
+                    bottom: '3%',
+                    containLabel: true,
+                    // width : 1600,
+                    // height : 300
+                },
+                toolbox: {
+                    feature: {
+                        saveAsImage: {}
+                    }
+                },
+                xAxis: {
+                    type: 'category',
+                    boundaryGap: false,
+                    // data: ['3月25日', '3月26日', '3月27日', '3月28日', '3月29日', '3月30日', '3月31日']
+                    data: xAxisData
+                    // data: ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
+                },
+                yAxis: {
+                    type: 'value'
+                },
+                series:
+                seriesData
+                /*[
+                    {
+                        name: '收入',
+                        type: 'line',
+                        stack: '总量',
+                        data: [120, 132, 101, 134, 90, 230, 210]
+                    },
+                    {
+                        name: '广告成本',
+                        type: 'line',
+                        stack: '总量',
+                        data: [220, 182, 191, 234, 290, 330, 310]
+                    },
+                    {
+                        name: 'ROAS',
+                        type: 'line',
+                        stack: '总量',
+                        data: [150, 232, 201, 154, 190, 330, 410]
+                    }
+                ]*/
+            };
+
+            // 使用刚指定的配置项和数据显示图表。
+            myChart.setOption(option);
+        }
+
+
+        $(function(){
+            getSites(); // 加载站点
+        })
+
+
+
+
+
+    });
+</script>
+</body>
+</html>

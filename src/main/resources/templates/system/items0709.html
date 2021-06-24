@@ -1,0 +1,582 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <:include file="../common/css.html" title="站点管理"/>
+</head>
+<body>
+<!-- 正文开始 -->
+<div class="layui-fluid">
+    <div class="layui-card">
+        <div class="layui-card-body">
+            <!-- 表格工具栏 -->
+
+
+            <!-- 表格顶部工具栏 -->
+            <div class="layui-form toolbar">
+                <div class="layui-form-item">
+
+<!--
+                    <div class="layui-inline">
+                        <label class="layui-form-label w-auto">搜索：</label>
+                        <div class="layui-input-inline mr0">
+                            <input name="keyword" class="layui-input" type="text" placeholder="站点ID\站点名称"/>
+                        </div>
+                    </div>
+-->
+
+                    <div class="layui-inline">
+
+<!--
+                        <button class="layui-btn icon-btn" lay-filter="searchSubmitMenu" lay-submit>
+                            <i class="layui-icon">&#xe615;</i>搜索站点
+                        </button>
+-->
+
+
+                        <!--<button id="menuBtnAdd" class="layui-btn icon-btn"><i class="layui-icon">&#xe654;</i>添加</button>-->
+
+<!--
+                        <button id="authBtnSync" class="layui-btn icon-btn"><i class="layui-icon">&#xe669;</i>同步站点
+                        </button>
+-->
+
+
+                        <button id="gaBtnSync" class="layui-btn icon-btn"><i class="layui-icon">&#xe669;</i>同步GA数据
+                        </button>
+
+                        <button id="fbBtnSync" class="layui-btn icon-btn"><i class="layui-icon">&#xe669;</i>同步FB数据
+                        </button>
+
+<!--
+                        <button id="syncBtn" class="layui-btn icon-btn"><i class="layui-icon">&#xe669;</i>同步数据
+                        </button>
+-->
+
+
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- 数据表格 -->
+            <table id="itemsTable" lay-filter="itemsTable"></table>
+        </div>
+    </div>
+</div>
+
+<!-- 表格操作列 -->
+<script type="text/html" id="itemTbBar">
+    <!--<a class="layui-btn layui-btn-primary layui-btn-xs" lay-event="edit">修改</a>-->
+    <a class="layui-btn layui-btn-danger layui-btn-xs"
+       data-dropdown="#menuTbDelDrop{{d.LAY_INDEX}}" no-shade="true">删除</a>
+    <!--<a class="layui-btn layui-btn-warm layui-btn-xs" lay-event="auth">权限分配</a>-->
+    <div class="dropdown-menu-nav dropdown-popconfirm dropdown-top-right layui-hide"
+         id="menuTbDelDrop{{d.LAY_INDEX}}"
+         style="max-width: 200px;white-space: normal;min-width: auto;margin-left: 10px;">
+        <div class="dropdown-anchor"></div>
+        <div class="dropdown-popconfirm-title">
+            <i class="layui-icon layui-icon-help"></i>
+            确定要删除吗？
+        </div>
+        <div class="dropdown-popconfirm-btn">
+            <a class="layui-btn" btn-cancel>取消</a>
+            <a class="layui-btn layui-btn-normal" lay-event="del">确定</a>
+        </div>
+    </div>
+</script>
+
+<!-- 表单弹窗 -->
+<script type="text/html" id="itemsEditDialog">
+    <form id="itemsEditForm" lay-filter="itemsEditForm" class="layui-form model-form" >
+        <input name="roleId" type="hidden"/>
+
+
+<!--
+        <div class="layui-form-item">
+            <label class="layui-form-label">站点选择</label>
+            <div class="layui-input-block">
+                <select name="itemsId" id="itemsId" lay-filter="itemsId"></select>
+            </div>
+        </div>
+-->
+
+
+        <div class="layui-form-item">
+            <label class="layui-form-label layui-form-required">站点名称:</label>
+            <div class="layui-input-block">
+                <input name="itemName" placeholder="请输入站点名称" class="layui-input"
+                       lay-verType="tips" lay-verify="required" required/>
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+            <label class="layui-form-label layui-form-required">GA账户:</label>
+            <div class="layui-input-block">
+                <div id="gaAccountSel"></div>
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+            <label class="layui-form-label layui-form-required">FB账户:</label>
+            <div class="layui-input-block">
+                <div id="fbAccountSel"></div>
+            </div>
+        </div>
+
+
+
+<!--
+        <div class="layui-form-item">
+            <div class="layui-input-block">
+            </div>
+            <div class="layui-input-block">
+            </div>
+            <div class="layui-input-block">
+            </div>
+            <div class="layui-input-block">
+            </div>
+            <div class="layui-input-block">
+            </div>
+            <div class="layui-input-block">
+            </div>
+        </div>
+-->
+
+        <div class="layui-form-item text-right">
+            <button class="layui-btn" lay-filter="itemsEditSubmit" lay-submit>保存</button>
+            <button class="layui-btn layui-btn-primary" type="button" ew-event="closeDialog">取消</button>
+        </div>
+
+    </form>
+</script>
+
+
+
+<:include file="../common/js.html"/>
+<script>
+    layui.use(['layer', 'form', 'table', 'tableX', 'util', 'admin', 'xmSelect', 'dropdown', 'zTree', 'treeTable'], function () {
+        var $ = layui.jquery;
+        var layer = layui.layer;
+        var form = layui.form;
+        var table = layui.table;
+        var tableX = layui.tableX;
+        var util = layui.util;
+        var admin = layui.admin;
+        var config = layui.config;
+        var xmSelect = layui.xmSelect;
+        var treeTable = layui.treeTable;
+
+        var gaItemsList = JSON.parse('${gaItemsList!}').map(function (d) {
+            return {name: d.name, value: d.value}
+        });
+        var fbItemsList = JSON.parse('${fbItemsList!}').map(function (d) {
+            return {name: d.name, value: d.value}
+        });
+
+
+        // var gaItemsList = [];
+        // var fbItemsList = [];
+        var tbDataList = [];  // 表格全部数据
+
+        /* 渲染表格 */
+        var insTb = treeTable.render({
+        // var insTb = tableX.render({
+            elem: '#itemsTable',
+            tree: {
+                iconIndex: 1,
+                idName: 'id',
+                pidName: 'parent_id',
+                isPidData: true,
+                getIcon: ''
+            },
+
+            // url: 'items/page',
+            page: true,
+            limit: 10,   //默认十条数据一页
+            limits: [10, 20, 30, 50],  //数据分页条
+            // where: data,
+            height: 'full-100',
+/*
+            toolbar: ['<p>',
+                '<button lay-event="add" class="layui-btn layui-btn-sm icon-btn"><i class="layui-icon">&#xe654;</i>添加</button>&nbsp;',
+                '<button lay-event="del" class="layui-btn layui-btn-sm layui-btn-danger icon-btn"><i class="layui-icon">&#xe640;</i>删除</button>',
+                '</p>'].join(''),
+*/
+
+            toolbar: ['<p>',
+                ' <button lay-event="add" class="layui-btn layui-btn-sm icon-btn"><i class="layui-icon">&#xe654;</i>添加</button>',
+                '</p>'].join(''),
+
+            cellMinWidth: 100,
+            // totalRow: true,
+            cols: [[
+                // {type: 'checkbox'},
+                {type: 'numbers'},
+                {field: 'item_name', title: '站点名称', sort: true},
+                // {field: 'item_id', title: '站点ID', sort: true},
+                {field: 'adAccount', title: '广告账户', sort: true},
+                {title: '操作', toolbar: '#itemTbBar', align: 'center', width: 200}
+            ]]
+            ,reqData: function (data, callback) {
+                admin.req('items/page', function (res) {
+                    tbDataList = res.data ? res.data : [];
+                    for (var i = 0; i < tbDataList.length; i++) {
+                        tbDataList[i].open = true;
+                    }
+                    callback(tbDataList);
+
+                });
+            }
+        });
+
+
+
+        /*
+                var insTb = tableX.render({
+                    elem: '#itemsTable',
+                    url: 'items/page',
+                    page: true,
+                    // height: 'full-100',
+                    toolbar: ['<p>',
+                        '<button lay-event="add" class="layui-btn layui-btn-sm icon-btn"><i class="layui-icon">&#xe654;</i>添加</button>&nbsp;',
+                        '<button lay-event="del" class="layui-btn layui-btn-sm layui-btn-danger icon-btn"><i class="layui-icon">&#xe640;</i>删除</button>',
+                        '</p>'].join(''),
+                    cellMinWidth: 100,
+                    // totalRow: true,
+                    cols: [[
+                        // {type: 'checkbox'},
+                        {type: 'numbers'},
+                        {field: 'id', title: '站点ID', sort: true},
+                        {field: 'name', title: '站点名称', sort: true},
+                    ]]
+                    ,done: function (res, curr, count) {
+
+                        console.log("gaItemsList gaItemsList res："+JSON.stringify(res))
+                        console.log("gaItemsList gaItemsList gaItemsList："+JSON.stringify(gaItemsList))
+
+                    },
+                });
+        */
+
+        /* 表格搜索 */
+        form.on('submit(searchSubmitMenu)', function (data) {
+            insTb.reload({where: data.field, page: {curr: 1}});
+            return false;
+        });
+
+        /* 表格工具条点击事件 */
+/*
+        table.on('tool(itemsTable)', function (obj) {
+            if ('edit' === obj.event) { // 修改
+                showEditModel(obj.data);
+            } else if ('del' === obj.event) { // 删除
+                doDel(obj);
+            } else if ('auth' === obj.event) {  // 权限管理
+                showPermModel(obj);
+            }
+        });
+*/
+
+        /* 表格头工具栏点击事件 */
+        treeTable.on('toolbar(itemsTable)', function (obj) {
+            console.log("............add 1")
+            if ('add' === obj.event) { // 添加
+                console.log("............add 2")
+                showEditModel();
+            } else if ('del' === obj.event) { // 删除
+                var checkRows = table.checkStatus('itemsTable');
+                if (0 === checkRows.data.length) {
+                    return layer.msg('请选择要删除的数据', {icon: 2, anim: 6});
+                }
+                var ids = checkRows.data.map(function (d) {
+                    return d.roleId;
+                });
+                doDel({ids: ids});
+            }
+        });
+
+        /* 表格操作列点击事件 */
+        treeTable.on('tool(itemsTable)', function (obj) {
+            var data = obj.data;
+            var layEvent = obj.event;
+            if (layEvent === 'edit') { // 修改
+                showEditModel(data);
+            } else if (layEvent === 'del') { // 删除
+                doDel(obj);
+            } else if ('auth' === obj.event) {  // 权限管理
+                showPermModel(obj);
+            }
+        });
+
+        /* 删除 */
+        function doDel(obj) {
+            var loadIndex = layer.load(2);
+            $.get('items/delete', {id: obj.data.id}, function (res) {
+                layer.close(loadIndex);
+                if (0 === res.code) {
+                    layer.msg(res.msg, {icon: 1});
+                    insTb.refresh();
+
+                    gaItemsList = JSON.parse(res.gaItemsList);
+                    fbItemsList = JSON.parse(res.fbItemsList);
+
+                } else {
+                    layer.msg(res.msg, {icon: 2, anim: 6});
+                }
+            });
+        }
+
+        // 同步按钮点击事件
+        $('#authBtnSync').click(function () {
+
+            console.log("authBtnSync.......0");
+
+
+            layer.confirm('确定进行同步吗？<br><span style="color: red;">（自动同步GA和FB所有站点）</span>', {
+
+                skin: 'layui-layer-admin'
+            }, function () {
+                layer.load(2);
+
+                console.log("authBtnSync.......1")
+
+                // 保存
+                admin.req('items/sync', {
+                    // json: JSON.stringify(authList)
+
+                }, function (res) {
+
+                    console.log("authBtnSync.......3："+ JSON.stringify(res));
+
+                    layer.closeAll('loading');
+                    if (0 == res.code) {
+                        layer.msg(res.msg, {icon: 1});
+                        insTb.reload({page: {curr: 1}});
+                    } else {
+                        layer.msg(res.msg, {icon: 2});
+                    }
+                }, 'POST');
+            });
+
+
+        });
+
+
+        // 同步按钮点击事件
+        $('#gaBtnSync').click(function () {
+
+            layer.confirm('确定进行同步吗？<br><span style="color: red;">（自动同步Google数据）</span>', {
+
+            skin: 'layui-layer-admin'
+            }, function () {
+                layer.load(2);
+
+                console.log("authBtnSync.......1")
+
+                // 保存
+                admin.req('items/syncGoogleData', {
+                    // json: JSON.stringify(authList)
+
+                }, function (res) {
+
+                    console.log("authBtnSync.......3："+ JSON.stringify(res));
+
+                    layer.closeAll('loading');
+                    if (0 == res.code) {
+                        layer.msg(res.msg, {icon: 1});
+                        insTb.reload({page: {curr: 1}});
+                    } else {
+                        layer.msg(res.msg, {icon: 2});
+                    }
+                }, 'POST');
+            });
+        });
+
+        // 同步按钮点击事件
+        $('#fbBtnSync').click(function () {
+
+            layer.confirm('确定进行同步吗？<br><span style="color: red;">（自动同步Facebook数据）</span>', {
+
+                skin: 'layui-layer-admin'
+            }, function () {
+                layer.load(2);
+
+                console.log("authBtnSync.......1")
+
+                // 保存
+                admin.req('items/syncFacebookData', {
+                    // json: JSON.stringify(authList)
+
+                }, function (res) {
+
+                    console.log("authBtnSync.......3："+ JSON.stringify(res));
+
+                    layer.closeAll('loading');
+                    if (0 == res.code) {
+                        layer.msg(res.msg, {icon: 1});
+                        insTb.reload({page: {curr: 1}});
+                    } else {
+                        layer.msg(res.msg, {icon: 2});
+                    }
+                }, 'POST');
+            });
+        });
+
+
+        /* 显示表单弹窗 */
+        function showEditModel(mData) {
+            admin.open({
+                type: 1,
+                title: (mData ? '修改' : '添加') + '站点',
+                content: $('#itemsEditDialog').html(),
+                success: function (layero, dIndex) {
+
+                    
+/*
+                    admin.req('itemsData/getSite', {}, function (res) {
+                        // admin.removeLoading('div[lay-hash="/system/lzgame"]');
+
+                        sites = JSON.parse(res.data);
+
+                        gaItemsList = JSON.parse(res.gaItemsList);
+                        fbItemsList = JSON.parse(res.fbItemsList);
+
+                        console.log("sitesData:"+JSON.stringify(sites))
+                        console.log("gaItemsList:"+JSON.stringify(gaItemsList))
+                        console.log("fbItemsList:"+JSON.stringify(fbItemsList))
+
+                        // sitesData = sites;
+
+                        var $select = $('[lay-filter="itemsEditForm"] select[name="itemsId"]');
+                        console.log("select："+JSON.stringify($select))
+                        $select.html('<option value="">请选择</option>');
+                        for (var i = 0; i < sites.length; i++) {
+                            $select.append('<option value="' + sites[i].id + '">' + sites[i].name + '</option>');
+                        }
+
+                        // getJobNumber(sites);
+                        layui.form.render("select");//重新渲染 固定写法
+
+                    }, 'get');
+*/
+
+                    // 回显表单数据
+                    form.val('itemsEditForm', mData);
+                    // 表单提交事件
+                    form.on('submit(itemsEditSubmit)', function (data) {
+                        var loadIndex = layer.load(2);
+                        $.post(mData ? 'items/update' : 'items/add', data.field, function (res) {
+                            layer.close(loadIndex);
+                            if (0 === res.code) {
+                                layer.close(dIndex);
+                                layer.msg(res.msg, {icon: 1});
+                                insTb.reload({page: {curr: 1}});
+                                // location.reload();
+
+                                // 更新站点
+                                gaItemsList = JSON.parse(res.gaItemsList);
+                                fbItemsList = JSON.parse(res.fbItemsList);
+
+                            } else {
+                                layer.msg(res.msg, {icon: 2, anim: 6});
+                            }
+                        });
+                        return false;
+                    });
+
+
+
+                    // 渲染多选下拉框
+                    var insGASel = xmSelect.render({
+                        el: '#gaAccountSel',
+                        name: 'gaAccountSel',
+                        layVerify: 'required',
+                        layVerType: 'tips',
+                        filterable: true,
+                        data: gaItemsList
+                    });
+
+                    var insFBSel = xmSelect.render({
+                        el: '#fbAccountSel',
+                        name: 'fbAccountSel',
+                        layVerify: 'required',
+                        layVerType: 'tips',
+                        filterable: true,
+                        data: fbItemsList
+                    });
+
+
+                    // 弹窗不出现滚动条
+                    $(layero).children('.layui-layer-content').css('overflow', 'visible');
+
+                }
+            });
+        }
+
+        // 同步按钮点击事件
+        $('#syncBtn').click(function () {
+
+            showEditModel();
+
+        });
+
+
+        /* 权限管理 */
+        function showPermModel(obj) {
+            var mRoleId = obj.data.roleId;
+            admin.open({
+                title: '角色权限分配',
+                btn: ['保存', '取消'],
+                content: '<ul id="roleAuthTree" class="ztree" style="padding-left: 15px;min-height: 150px;"></ul>',
+                success: function (layero, dIndex) {
+                    var loadIndex = layer.load(2);
+                    $.get('role/menu/list', {roleId: mRoleId}, function (res) {
+                        layer.close(loadIndex);
+                        if (0 === res.code) {
+                            $.fn.zTree.init($('#roleAuthTree'), {
+                                check: {enable: true},
+                                data: {
+                                    key: {name: "menuName"},
+                                    simpleData: {
+                                        enable: true,
+                                        idKey: "menuId",
+                                        pIdKey: "parentId", rootPId: 0
+                                    }
+                                }
+                            }, res.data);
+                        } else {
+                            layer.msg(res.msg, {icon: 2, anim: 6});
+                        }
+                    });
+                    // 超出一定高度滚动
+                    $(layero).children('.layui-layer-content').css({'max-height': '300px', 'overflow': 'auto'});
+                },
+                /*
+                yes: function (dIndex) {
+                    var checkedRows = $.fn.zTree.getZTreeObj('roleAuthTree').getCheckedNodes(true);
+                    var ids = [];
+                    for (var i = 0; i < checkedRows.length; i++) {
+                        ids.push(checkedRows[i].menuId);
+                    }
+                    var loadIndex = layer.load(2);
+                    admin.req('role/menu/update/' + mRoleId, JSON.stringify(ids), function (res) {
+                        layer.close(loadIndex);
+                        if (0 === res.code) {
+                            layer.msg(res.msg, {icon: 1});
+                            layer.close(dIndex);
+                        } else {
+                            layer.msg(res.msg, {icon: 2, anim: 6});
+                        }
+                    }, 'post');
+                }
+                */
+            });
+        }
+
+
+
+
+        });
+</script>
+</body>
+</html>

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.egao.common.system.mapper.UserItemMapper">
+
+    <select id="selectUserItem" resultType="java.util.HashMap">
+        select * from sys_user_item
+    </select>
+
+    <select id="selectUserItemCount" resultType="java.lang.Integer">
+        select count(*) from(
+            select * from sys_user_item
+        )items
+    </select>
+
+    <select id="selectUserItemByUserId" resultType="java.util.HashMap">
+        select userItem.*,items.id itemsId,items.name itemsName from sys_user_item userItem LEFT JOIN ga_items items on items.id = userItem.item_id
+        where user_id = #{userId}
+    </select>
+
+    <insert id="insertUserItem" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        <selectKey resultType="int" order="AFTER" keyProperty="id">
+            SELECT LAST_INSERT_ID() as id
+        </selectKey>
+        insert into sys_user_item(user_id, item_id)
+        values(#{user_id}, #{item_id})
+    </insert>
+
+    <update id="updateUserItem">
+        update sys_user_item
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="user_id!=null and user_id!=''">
+                user_id = #{user_id},
+            </if>
+            <if test="item_id!=null and item_id!=''">
+                item_id = #{item_id}
+            </if>
+        </trim>
+        where id = #{id}
+    </update>
+
+
+    <delete id="deleteUserItemById">
+        delete from sys_user_item where id = #{id}
+    </delete>
+
+    <delete id="deleteUserItemByUserId">
+        delete from sys_user_item where user_id = #{userId}
+    </delete>
+
+
+
+
+</mapper>

@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.egao.common.system.mapper.CostMapper">
+
+    <!--order by cost.item_id,cost.month desc-->
+    <select id="selectCost" resultType="java.util.HashMap">
+        select cost.*,items.name itemsName,items.id itemsId from ga_cost cost
+        left join ga_items items on cost.item_id = items.id
+        <if test="startTime!=null and startTime!=''">
+            where cost.month BETWEEN #{startTime} and #{endTime}
+        </if>
+        order by cost.month desc
+        limit #{page}, #{rows}
+    </select>
+
+    <select id="selectCostCount" resultType="java.lang.Integer">
+        select count(*) from ga_cost cost
+        <if test="startTime!=null and startTime!=''">
+            where cost.month BETWEEN #{startTime} and #{endTime}
+        </if>
+    </select>
+
+    <select id="selectCostByMonth" resultType="java.util.HashMap">
+        select * from ga_cost where month = #{month}
+    </select>
+
+    <select id="selectCostByMonthAndItemId" resultType="java.util.HashMap">
+        select * from ga_cost where month = #{month} and item_id = #{item_id}
+    </select>
+
+    <insert id="insertCost" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        <selectKey resultType="int" order="AFTER" keyProperty="id">
+            SELECT LAST_INSERT_ID() as id
+        </selectKey>
+        insert into ga_cost(month, item_id, logisticCost, goodsCost
+        , refund, toolCost, passCost, operateCost)
+        values(#{month}, #{item_id}, #{logisticCost}, #{goodsCost}
+        , #{refund}, #{toolCost}, #{passCost}, #{operateCost})
+    </insert>
+
+    <update id="updateCost">
+        update ga_cost
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="month!=null and month!=''">
+                month = #{month},
+            </if>
+            <if test="item_id!=null and item_id!=''">
+                item_id = #{item_id},
+            </if>
+            <if test="logisticCost!=''">
+                logisticCost = #{logisticCost},
+            </if>
+            <if test="goodsCost!=null and goodsCost!=''">
+                goodsCost = #{goodsCost},
+            </if>
+            <if test="refund!=null and refund!=''">
+                refund = #{refund},
+            </if>
+            <if test="toolCost!=null and toolCost!=''">
+                toolCost = #{toolCost},
+            </if>
+            <if test="passCost!=null and passCost!=''">
+                passCost = #{passCost},
+            </if>
+            <if test="operateCost!=null and operateCost!=''">
+                operateCost = #{operateCost}
+            </if>
+        </trim>
+        where cost_id = #{costId}
+    </update>
+
+
+    <delete id="deleteByMonth">
+        delete from ga_cost where month = #{month}
+    </delete>
+
+    <delete id="deleteCostById">
+        delete from ga_cost where cost_id = #{id}
+    </delete>
+
+    <select id="selectOverall" resultType="java.util.HashMap">
+        select * from ga_overall
+    </select>
+
+    <select id="selectCostByMonthAndItemsName" resultType="java.util.HashMap">
+        select cost.*,items.name itemsName from ga_cost cost
+        left join ga_items items on cost.item_id = items.id
+        where month = #{month} and items.name = #{itemsName}
+    </select>
+
+
+
+</mapper>

@@ -1,0 +1,448 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.egao.common.system.mapper.ItemsMapper">
+
+    <select id="selectItems" resultType="java.util.HashMap">
+        select id itemsId,name itemsName from ga_items where type = 0
+        <if test="keyword!=null and keyword!=''">
+            and id like '%${keyword}%'
+            or name like '%${keyword}%'
+        </if>
+        limit #{page}, #{rows}
+    </select>
+
+
+    <select id="selectItemsCount" resultType="java.lang.Integer">
+        select count(*) from ga_items
+        <if test="keyword!=null and keyword!=''">
+            where id like '%${keyword}%'
+            or name like '%${keyword}%'
+        </if>
+    </select>
+
+
+
+    <select id="selectItemsByJobNumber" resultType="java.util.HashMap">
+        select aii.itemsId,items.name itemsName from(
+            select * from(
+                select ad.*,date_format(ad.create_time, '%Y-%m') month
+                ,(case when item.item_id is null then ad.items_id else item.item_id end) as itemsId
+                ,item.ad_account itemAdAccount
+                from ga_ad ad
+                LEFT JOIN ga_item item on item.ad_account = ad.ad_account
+                and IF(ad.ad_account = '(not set)', item.item_id = ad.items_id, 1 = 1)
+                where 1 = 1
+                and ad.job_number = #{jobNumber}
+            )ai where 1 = 1
+            GROUP BY ai.itemsId
+        )aii LEFT JOIN ga_items items on items.id = aii.itemsId
+    </select>
+
+
+
+
+
+    <select id="selectItemsById" resultType="java.util.HashMap">
+        select * from ga_items where id = #{id}
+    </select>
+
+    <select id="selectItemsByName" resultType="java.util.HashMap">
+        select * from ga_items where name = #{name}
+    </select>
+
+
+    <insert id="insertItems">
+        insert into ga_items(id, business_id, name, type) values(#{id}, #{business_id}, #{name}, #{type})
+    </insert>
+
+    <update id="updateItems">
+        update ga_items
+        <set>
+            <if test="name!=null and name!=''">
+                name = #{name}
+            </if>
+        </set>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteAllItems">
+        delete from ga_items
+    </delete>
+
+    <delete id="deleteByType">
+        delete from ga_items where type = #{type}
+    </delete>
+
+    <delete id="deleteByBusinessId">
+        delete from ga_items where type = #{type} and business_id = #{business_id}
+    </delete>
+
+    <select id="selectItemsByType" resultType="java.util.HashMap">
+        select items.id value,items.name name from ga_items items left join ga_item item on item.item_id = items.id where items.type = #{type} and item.id is null
+    </select>
+
+    <select id="selectItemsByType2" resultType="java.util.HashMap">
+        select id value,name from ga_items where type = #{type}
+    </select>
+
+    <select id="selectAllItemsByType" resultType="java.util.HashMap">
+        select id value,name from ga_items where type = #{type}
+    </select>
+
+
+    <select id="selectItemsByUserIdAndType" resultType="java.util.HashMap">
+        select items.id value,items.name from ga_items items INNER JOIN sys_user_item userItem on userItem.item_id = items.id
+        where items.type = #{type} and userItem.user_id = #{userId}
+    </select>
+
+
+
+    <select id="selectItem" resultType="java.util.HashMap">
+        select iaa.*,iaa.item_id itemsId, items.name itemsName from
+        (
+                select item.*,items.name adAccountName from ga_item item LEFT JOIN ga_items items on items.id = item.ad_account
+        )iaa
+        left join ga_items items on items.id = iaa.item_id
+        limit #{page}, #{rows}
+    </select>
+
+    <select id="selectItemCount" resultType="java.lang.Integer">
+        select count(*) from ga_item item
+    </select>
+
+
+    <select id="selectItemByParentId" resultType="java.util.HashMap">
+        select items.id itemsId,items.name itemsName,item.ad_account adAccount from ga_item item
+        left join ga_items items on items.id = item.item_id
+        where item.parent_id = #{parentId}
+    </select>
+
+
+    <insert id="insertItem" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        <selectKey resultType="long" order="AFTER" keyProperty="id">
+            SELECT LAST_INSERT_ID() as id
+        </selectKey>
+        insert into ga_item(parent_id, item_id, item_name, ad_account, item_type, account_type)
+        values(#{parent_id}, #{item_id}, #{item_name}, #{ad_account}, #{item_type}, #{account_type})
+    </insert>
+
+    <update id="updateItem">
+        update ga_item
+        <set>
+            <if test="parent_id!=null and parent_id!=''">
+                parent_id = #{parent_id},
+            </if>
+            <if test="item_id!=null and item_id!=''">
+                item_id = #{item_id},
+            </if>
+            <if test="item_name!=null and item_name!=''">
+                item_name = #{item_name},
+            </if>
+            <if test="ad_account!=null and ad_account!=''">
+                ad_account = #{ad_account},
+            </if>
+            <if test="item_type!=null and item_type!=''">
+                item_type = #{item_type},
+            </if>
+            <if test="update_time!=null and update_time!=''">
+                update_time = #{update_time}
+            </if>
+        </set>
+        where id = #{id}
+    </update>
+
+    <update id="updateBindingStatusById">
+        update ga_items set bindingStatus = #{bindingStatus} where id = #{id}
+    </update>
+
+
+
+
+    <delete id="deleteItemById">
+        delete from ga_item where id = #{id}
+    </delete>
+
+    <delete id="deleteItemByParentId">
+        delete from ga_item where parent_id = #{parentId}
+    </delete>
+
+    <select id="selectItemById" resultType="java.util.HashMap">
+        select * from ga_item where id = #{id}
+    </select>
+
+    <select id="selectItemsCanBind" resultType="java.util.HashMap">
+        select items.id value,items.id name from ga_items items left join ga_item item on item.ad_account = items.id where items.type = #{type} and item.id is null
+    </select>
+
+    <select id="selectAdAccountByItemId" resultType="java.util.HashMap">
+        select item.ad_account value,item.ad_account name,item.account_type accountType from ga_item item
+        where item.item_id = #{itemId} and item.account_type = #{accountType} and item.item_type = 1
+    </select>
+
+    <select id="selectFBAdAccountByItemId" resultType="java.util.HashMap">
+        select item.ad_account value,item.ad_account name,item.account_type accountType from
+        ga_item item LEFT JOIN ga_items items on items.id = item.ad_account
+        where item.item_id = #{itemId} and item.account_type = #{accountType} and item.item_type = 1
+    </select>
+
+
+    <select id="selectItemCost" resultType="java.util.HashMap">
+        select
+        ai.month,ai.itemsId
+        ,sum(ai.revenue) revenue,sum(ai.cost) cost
+        ,channel.parent_id channelId,channel.source_name sourceName
+         from(
+            select
+            date_format(ad.create_time, '%Y-%m') month,ad.items_id,ad.source
+            ,revenue,cost
+            ,(case when item.item_id is null then ad.items_id else item.item_id end) as itemsId
+            from ga_ad ad left JOIN ga_item item
+            on item.ad_account = ad.ad_account
+            and IF(ad.ad_account = '(not set)', item.item_id = ad.items_id, 1 = 1)
+            where 1 = 1
+            <if test="jobNumber!=null and jobNumber!=''">
+                and ad.job_number = #{jobNumber}
+            </if>
+            <if test="adAccount!=null and adAccount!=''">
+                and ad.ad_account = #{adAccount}
+            </if>
+<!--
+            <if test="startTime!=null and endTime!=''">
+                and ad.create_time BETWEEN #{startTime} and #{endTime}
+            </if>
+-->
+        )ai LEFT JOIN ga_channel channel on channel.source = ai.source
+        where 1 = 1
+        <if test="itemsId!=null and itemsId!=''">
+            and ai.itemsId = #{itemsId}
+        </if>
+        <choose>
+            <when test="channelId==0 and channelId!=''">
+                and channel.parent_id is null
+            </when>
+            <when test="channelId!=null and channelId!=''">
+                and channel.parent_id = #{channelId}
+            </when>
+        </choose>
+        group by month,ai.itemsId
+        order by month desc
+    </select>
+
+
+<!--
+    <select id="selectItemData" resultType="java.util.HashMap">
+        select (case when item.item_id is null then ads.items_id else item.item_id end) as itemsId
+        ,ads.items_id,ads.job_number,ads.month,sum(ads.revenue) revenue,sum(ads.cost) cost
+        from(
+
+            SELECT ad.items_id,ad.job_number,ad.ad_account,ad.create_time
+            ,date_format(ad.create_time, '%Y-%m') month
+            ,sum(ad.revenue) revenue,sum(ad.cost) cost
+            ,channel.parent_id channelId,channel.source_name channelName
+            FROM ga_ad ad LEFT JOIN ga_channel channel on channel.source = ad.source
+            where 1 = 1
+
+            <if test="startTime!=null and endTime!=''">
+                and ad.create_time BETWEEN #{startTime} and #{endTime}
+            </if>
+            <if test="jobNumber!=null and jobNumber!=''">
+                and ad.job_number = #{jobNumber}
+            </if>
+            <choose>
+                <when test="channelId==0 and channelId!=''">
+                    and channel.parent_id is null
+                </when>
+                <when test="channelId!=null and channelId!=''">
+                    and channel.parent_id = #{channelId}
+                </when>
+            </choose>
+            GROUP BY items_id,job_number,month order by month
+        )ads LEFT JOIN ga_item item on item.ad_account = ads.ad_account and IF(ads.ad_account = '(not set)', item.item_id = ads.items_id, 1 = 1)
+        where 1 = 1
+        <if test="itemsId!=null and itemsId!=''">
+            and ads.items_id = #{itemsId}
+        </if>
+        <choose>
+            <when test="channelId==0 and channelId!=''">
+                and ads.parent_id is null
+            </when>
+            <when test="channelId!=null and channelId!=''">
+                and ads.parent_id = #{channelId}
+            </when>
+        </choose>
+        GROUP BY itemsId,ads.job_number,ads.month
+        order by revenue desc
+
+    </select>
+-->
+
+
+    <select id="selectItemData" resultType="java.util.HashMap">
+        select aici.*,c.channelCost from(
+
+            select aic.*,items.name itemsName from(
+                select
+                ai.month,ai.itemsId,ai.job_number
+                ,sum(ai.revenue) revenue,sum(ai.cost) cost
+                ,channel.parent_id channelId,channel.source_name channelName
+                from(
+                    select ais.* from(
+                        select ad.*,date_format(ad.create_time, '%Y-%m') month
+                        ,(case when item.item_id is null then ad.items_id else item.item_id end) as itemsId
+                        ,item.ad_account itemAdAccount
+                        from ga_ad ad
+                        LEFT JOIN ga_item item on item.ad_account = ad.ad_account
+                        and IF(ad.ad_account = '(not set)', item.item_id = ad.items_id, 1 = 1)
+                        where 1 = 1
+                        <choose>
+                        <when test="jobNumber=='无工号'">
+                            and LENGTH(trim(ad.job_number)) = 0
+                        </when>
+                        <when test="jobNumber!=null and jobNumber!=''">
+                            and ad.job_number = #{jobNumber}
+                        </when>
+                        </choose>
+                        <if test="adAccount!=null and adAccount!=''">
+                            and ad.ad_account = #{adAccount}
+                        </if>
+                        <if test="startTime!=null and endTime!=''">
+                            and ad.create_time BETWEEN #{startTime} and #{endTime}
+                        </if>
+                    )ais INNER JOIN
+                    (
+                        select * from sys_user_item sui where sui.user_id = #{userId}
+                    )ui on ui.item_id = ais.itemsId
+                )ai LEFT JOIN ga_channel channel on channel.source = ai.source
+                where 1 = 1
+                <if test="itemsId!=null and itemsId!=''">
+                    and ai.itemsId = #{itemsId}
+                </if>
+                <choose>
+                    <when test="channelId==0 and channelId!=''">
+                        and channel.parent_id is null
+                    </when>
+                    <when test="channelId!=null and channelId!=''">
+                        and channel.parent_id = #{channelId}
+                    </when>
+                </choose>
+                GROUP BY ai.month,ai.itemsId
+                <if test="groupStatus==1">
+                    ,channel.parent_id
+                </if>
+            )aic left join ga_items items on items.id = aic.itemsId
+        )aici LEFT JOIN
+        (
+            select date_format(cc.dates, '%Y-%m') month,channel_id,item_id,sum(cc.cost) channelCost from ga_channel_cost cc
+            where 1 = 1
+            <if test="channelId!=null and channelId!=''">
+                and cc.channel_id = #{channelId}
+            </if>
+            <if test="startTime!=null and endTime!=''">
+                and cc.dates BETWEEN #{startTime} and #{endTime}
+            </if>
+            group by cc.month,cc.item_id
+            <if test="groupStatus==1">
+                ,cc.channel_id
+            </if>
+
+        )c on c.month = aici.month and c.item_id = aici.itemsId
+        <if test="groupStatus==1">
+            and c.channel_id = aici.channelId
+        </if>
+        <choose>
+            <when test="groupStatus==1">
+                order by aici.itemsId asc
+            </when>
+            <when test="groupStatus==0">
+                order by aici.revenue desc
+            </when>
+        </choose>
+
+
+    </select>
+
+    <select id="selectChartData" resultType="java.util.HashMap">
+
+        select aici.*,c.channelCost,c.dates from(
+
+		select aic.*,items.name itemsName from(
+
+				select
+				ai.create_time date,ai.month,ai.itemsId,ai.job_number
+				,sum(ai.revenue) revenue,sum(ai.cost) cost
+				,channel.parent_id channelId,channel.source_name channelName
+				from(
+						select ais.* from(
+								select ad.*,date_format(ad.create_time, '%Y-%m') month
+								,(case when item.item_id is null then ad.items_id else item.item_id end) as itemsId
+								,item.ad_account itemAdAccount
+								from ga_ad ad
+								LEFT JOIN ga_item item on item.ad_account = ad.ad_account
+								and IF(ad.ad_account = '(not set)', item.item_id = ad.items_id, 1 = 1)
+								where 1 = 1
+                                <choose>
+                                    <when test="jobNumber=='无工号'">
+                                        and LENGTH(trim(ad.job_number)) = 0
+                                    </when>
+                                    <when test="jobNumber!=null and jobNumber!=''">
+                                        and ad.job_number = #{jobNumber}
+                                    </when>
+                                </choose>
+                                <if test="adAccount!=null and adAccount!=''">
+                                    and ad.ad_account = #{adAccount}
+                                </if>
+                                <if test="startTime!=null and endTime!=''">
+                                    and ad.create_time BETWEEN #{startTime} and #{endTime}
+                                </if>
+
+						)ais INNER JOIN
+						(
+                            /*筛选授权站点*/
+                            select * from sys_user_item sui where sui.user_id = #{userId}
+						)ui on ui.item_id = ais.itemsId
+				)ai LEFT JOIN ga_channel channel on channel.source = ai.source
+				where 1 = 1
+
+                <if test="itemsId!=null and itemsId!=''">
+                    and ai.itemsId = #{itemsId}
+                </if>
+                <choose>
+                    <when test="channelId==0 and channelId!=''">
+                        and channel.parent_id is null
+                    </when>
+                    <when test="channelId!=null and channelId!=''">
+                        and channel.parent_id = #{channelId}
+                    </when>
+                </choose>
+                GROUP BY ai.create_time,ai.itemsId
+                <if test="groupStatus==1">
+                    ,channel.parent_id
+                </if>
+
+		)aic left join ga_items items on items.id = aic.itemsId
+        )aici LEFT JOIN
+        (
+                /*关联广告渠道成本*/
+                select dates,date_format(cc.dates, '%Y-%m') month,channel_id,item_id,sum(cc.cost) channelCost from ga_channel_cost cc
+                where 1 = 1
+                <if test="channelId!=null and channelId!=''">
+                    and cc.channel_id = #{channelId}
+                </if>
+                <if test="startTime!=null and endTime!=''">
+                    and cc.dates BETWEEN #{startTime} and #{endTime}
+                </if>
+                group by cc.dates,cc.item_id
+                <if test="groupStatus==1">
+                    ,cc.channel_id
+                </if>
+
+        )c on c.dates = aici.date and c.item_id = aici.itemsId
+        <if test="groupStatus==1">
+            and c.channel_id = aici.channelId
+        </if>
+        order by aici.date ASC
+
+    </select>
+
+
+</mapper>

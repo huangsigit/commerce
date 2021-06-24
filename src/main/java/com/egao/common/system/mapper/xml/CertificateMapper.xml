@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.egao.common.system.mapper.CertificateMapper">
+
+
+    <select id="selectCertificate" resultType="java.util.HashMap">
+        select c.*,c.name cName from ga_certificate c
+        <if test="keyword!=null">
+            where c.service_account_id like '%${keyword}%'
+            or c.name like '%${keyword}%'
+        </if>
+        order by c.id desc
+    </select>
+
+    <select id="selectAllCertificate" resultType="java.util.HashMap">
+        select * from ga_certificate order by id desc
+    </select>
+
+    <select id="selectCertificateById" resultType="java.util.HashMap">
+        select * from ga_certificate where id = #{id}
+    </select>
+
+    <insert id="insertCertificate">
+        insert into ga_certificate(username, service_account_id, name, path, create_time)
+        values(#{username}, #{service_account_id}, #{name}, #{path}, #{create_time})
+    </insert>
+
+    <update id="updateCertificate">
+        update ga_certificate
+        <set>
+            <if test="username!=null and username!=''">
+                username = #{username},
+            </if>
+            <if test="service_account_id!=null and service_account_id!=''">
+                service_account_id = #{service_account_id},
+            </if>
+            <if test="name!=null and name!=''">
+                name = #{name},
+            </if>
+            <if test="path!=null and path!=''">
+                path = #{path},
+            </if>
+            <if test="create_time!=null and create_time!=''">
+                create_time = #{create_time}
+            </if>
+        </set>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteCertificate">
+        DELETE FROM ga_certificate WHERE id = #{id}
+    </delete>
+
+
+
+</mapper>

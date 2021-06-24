@@ -1,0 +1,18 @@
+package com.egao.common.api.service;
+
+import java.util.List;
+import java.util.Map;
+
+/**
+ * <p>
+ * 菜单表 服务类
+ * </p>
+ *
+ * @author hs
+ * @since 2019-10-10
+ */
+public interface WintecPayService {
+
+
+
+}

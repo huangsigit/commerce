@@ -1,0 +1,1315 @@
+﻿<!DOCTYPE html>
+<html xmlns:v-bind="http://www.w3.org/1999/xhtml">
+<head>
+    <:include file="../common/css.html" title="用户管理"/>
+    <script src="https://cdn.staticfile.org/vue/2.2.2/vue.min.js"></script>
+</head>
+<body>
+<style>
+    .layui-form-label{
+        width: 100px;
+    }
+    .layui-input-block {
+        margin-left: 130px;
+        min-height: 36px
+    }
+</style>
+
+<!-- 正文开始 -->
+<div class="layui-fluid" lay-filter="searchForm">
+    <div class="layui-card">
+        <div class="layui-card-body">
+            <!-- 表格工具栏 -->
+
+            <form class="layui-form toolbar" lay-filter="userTbSearchForm">
+
+                <div class="layui-form-item">
+                    <!--
+
+                                        <div class="layui-inline">
+                                            <label class="layui-form-label">账&emsp;号:</label>
+                                            <div class="layui-input-inline">
+                                                <input name="username" class="layui-input" placeholder="输入账号"/>
+                                            </div>
+                                        </div>
+                                        <div class="layui-inline">
+                                            <label class="layui-form-label">用户名:</label>
+                                            <div class="layui-input-inline">
+                                                <input name="nickName" class="layui-input" placeholder="输入用户名"/>
+                                            </div>
+                                        </div>
+                                        <div class="layui-inline">&emsp;
+                                            <button class="layui-btn icon-btn" lay-filter="userTbSearch" lay-submit>
+                                                <i class="layui-icon">&#xe615;</i>搜索
+                                            </button>
+                                        </div>
+                    -->
+
+
+                    <!--
+                                        <div class="layui-inline">
+                                        <label class="layui-form-label w-auto">站点：</label>
+                                        <div class="layui-input-inline">
+                                            <select name="itemsId"  lay-filter="itemsId" id="itemsId" lay-search>
+                                            </select>
+                                        </div>
+                                        </div>
+
+                                        <div class="layui-inline">
+                                        <label class="layui-form-label w-auto">工号：</label>
+                                        <div class="layui-input-inline">
+                                            <select name="jobNumber" lay-filter="jobNumber" id="jobNumber" placeholder="请输入工号" lay-search>
+                                            </select>
+                                        </div>
+                                        </div>
+
+                                        <div class="layui-inline">
+                                        <label class="layui-form-label w-auto">广告账户：</label>
+                                        <div class="layui-input-inline">
+                                            <select name="adAccount" lay-filter="adAccount" id="adAccount" placeholder="请输入广告账户" lay-search>
+                                            </select>
+                                        </div>
+                                        </div>
+
+                                        <div class="layui-inline">
+                                            <label class="layui-form-label w-auto">广告渠道：</label>
+                                            <div class="layui-input-inline">
+                                                <input id="adChannels" name="adChannel" lay-filter="adChannel" class="layui-input" type="text" placeholder="广告渠道" lay-search/>
+                                            </div>
+                                        </div>
+                    -->
+
+                    <div class="layui-inline">
+                        <label class="layui-form-label">年月范围：</label>
+                        <div class="layui-input-inline">
+                            <input type="text" class="layui-input" id="searchTime" name="searchTime" placeholder="默认查询一年数据" lay-search>
+                        </div>
+                    </div>
+
+                    <div class="layui-inline">
+                        <button class="layui-btn icon-btn" lay-filter="userTbSearch" lay-submit>
+                            <i class="layui-icon">&#xe615;</i>搜索
+                        </button>
+                        <!--<button id="clearBtn" class="layui-btn icon-btn" lay-filter="clearBtn" lay-submit><i class="layui-icon">&#xe654;</i>清空</button>-->
+                        <!--<button id="addBtn" class="layui-btn icon-btn"><i class="layui-icon">&#xe654;</i>添加</button>-->
+                    </div>
+
+                </div>
+            </form>
+
+            <!-- 数据表格 -->
+            <table id="channelDataTable" lay-filter="channelDataTable"></table>
+        </div>
+    </div>
+</div>
+
+<!-- 表格操作列 -->
+<script type="text/html" id="userTbBar">
+    <a class="layui-btn layui-btn-primary layui-btn-xs" lay-event="edit" >修改</a>
+    <a class="layui-btn layui-btn-danger layui-btn-xs"
+       data-dropdown="#userTbDelDrop{{d.LAY_INDEX}}" no-shade="true">删除</a>
+    <!--<a class="layui-btn layui-btn-xs" lay-event="reset">重置密码</a>-->
+    <div class="dropdown-menu-nav dropdown-popconfirm dropdown-top-right layui-hide"
+         id="userTbDelDrop{{d.LAY_INDEX}}"
+         style="max-width: 200px;white-space: normal;min-width: auto;margin-left: 10px;">
+        <div class="dropdown-anchor"></div>
+        <div class="dropdown-popconfirm-title">
+            <i class="layui-icon layui-icon-help"></i>
+            <!--确定要删除{{d.nickName}}吗？-->
+            确定要删除吗？
+        </div>
+        <div class="dropdown-popconfirm-btn">
+            <a class="layui-btn" btn-cancel>取消</a>
+            <a class="layui-btn layui-btn-normal" lay-event="del">确定</a>
+        </div>
+    </div>
+</script>
+<!-- 表格状态列 -->
+<script type="text/html" id="userTbState">
+    <input type="checkbox" lay-filter="userTbStateCk" value="{{d.userId}}" lay-skin="switch"
+           lay-text="正常|锁定" {{d.state==0?'checked':''}}/>
+</script>
+<!-- 表单弹窗 -->
+<script type="text/html" id="editFormDialog">
+    <form id="editForm" lay-filter="editForm" class="layui-form model-form">
+
+        <input name="cost_id" type="hidden"/>
+
+        <div class="layui-form-item">
+            <label class="layui-form-label layui-form-required">月份</label>
+            <div class="layui-input-block">
+                <input name="month" type="text" class="layui-input" id="addMonth" placeholder="yyyy-MM" lay-verify="required">
+            </div>
+        </div>
+
+
+        <div class="layui-form-item" id="itemsApp">
+            <label class="layui-form-label layui-form-required">站点</label>
+            <div class="layui-input-block" >
+                <select @change='getValue' v-model="gaItems" id="itemsId" name="itemsId" lay-filter="itemsId" lay-verify="required">
+                    <!--<option v-bind:value="isSelect">默认值</option>-->
+                    <option v-for="gaItems in gaItemsList" :value="gaItems.value" >{{gaItems.name}}</option>
+                </select>
+            </div>
+        </div>
+
+
+        <div class="layui-form-item">
+            <label class="layui-form-label layui-form-required">物流成本</label>
+            <div class="layui-input-block">
+                <input  name="logisticCost" id="logisticCost" placeholder="请输入物流成本" type="text" class="layui-input"
+                        v-model="logisticCostValue"
+                        maxlength="80" lay-verify="required"/>
+            </div>
+        </div>
+
+
+
+
+        <div class="layui-form-item">
+            <label class="layui-form-label layui-form-required">商品成本</label>
+            <div class="layui-input-block">
+                <input name="goodsCost" id="goodsCost" placeholder="请输入商品成本" type="text" class="layui-input"
+                       v-model="goodsCostValue"
+                       maxlength="80" lay-verify="required"/>
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+            <label class="layui-form-label layui-form-required">运营成本</label>
+            <div class="layui-input-block">
+                <input name="operateCost" id="operateCost" placeholder="请输入运营成本" type="text" class="layui-input"
+                       v-model="operateCostValue"
+                       maxlength="80" lay-verify="required"/>
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+            <label class="layui-form-label layui-form-required">退款</label>
+            <div class="layui-input-block">
+                <input name="refund" id="refund" placeholder="请输入退款" type="text" class="layui-input"
+                       v-model="refundValue"
+                       maxlength="80" lay-verify="required"/>
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+            <label class="layui-form-label layui-form-required">工具成本</label>
+            <div class="layui-input-block">
+                <input name="toolCost" id="toolCost" placeholder="请输入工具成本" type="text" class="layui-input"
+                       v-model="toolCostValue"
+                       maxlength="80" lay-verify="required"/>
+            </div>
+        </div>
+
+
+        <div class="layui-form-item">
+            <label class="layui-form-label layui-form-required">通道成本</label>
+            <div class="layui-input-block">
+                <input name="passCost" id="passCost" placeholder="请输入通道成本" type="text" class="layui-input"
+                       v-model="passCostValue"
+                       maxlength="80" lay-verify="required"/>
+            </div>
+        </div>
+
+
+        <div class="layui-form-item text-right">
+            <button class="layui-btn layui-btn-primary" type="button" ew-event="closeDialog">取消</button>
+            <button class="layui-btn" lay-filter="editSubmit" lay-submit>保存</button>
+        </div>
+
+
+
+    </form>
+</script>
+
+
+
+
+
+<:include file="../common/js.html"/>
+<script>
+    layui.use(['layer', 'form', 'table', 'tableX', 'util', 'admin', 'xmSelect', 'formX', 'dropdown', 'upload', 'laydate'], function () {
+        var $ = layui.jquery;
+        var layer = layui.layer;
+        var form = layui.form;
+        var table = layui.table;
+        var tableX = layui.tableX;
+        var util = layui.util;
+        var admin = layui.admin;
+        var xmSelect = layui.xmSelect;
+        var laydate = layui.laydate;
+        var sites = [];  // 全部站点
+/*
+        var gaItemsList = JSON.parse('${gaItemsList!}').map(function (d) {
+            return {name: d.name, value: d.value}
+        });
+*/
+
+        var gaItemsList = JSON.parse('${gaItemsList!}');
+
+
+        /*
+        var roleList = JSON.parse('${rolesJson!}').map(function (d) {
+            return {name: d.roleName, value: d.roleId}
+        });
+*/
+        /* 渲染表格 */
+        var insTb = tableX.render({
+            elem: '#channelDataTable',
+            url: 'cost/page',
+            page: true,
+            // height: 'full-100',
+            toolbar: ['<p>',
+                // '<button lay-event="add" class="layui-btn layui-btn-sm icon-btn"><i class="layui-icon">&#xe654;</i>添加</button>&nbsp;',
+                // '<button lay-event="add" class="layui-btn layui-btn-primary layui-btn-sm layui-btn-radius"><i class="layui-icon">&#xe654;</i>添加站点成本</button>&nbsp;',
+                // '<button lay-event="editOverall" class="layui-btn layui-btn-primary layui-btn-sm layui-btn-radius"><i class="layui-icon">&#xe642;</i>修改全局参数</button>&nbsp;',
+                // '<button lay-event="del" class="layui-btn layui-btn-sm layui-btn-danger icon-btn"><i class="layui-icon">&#xe640;</i>删除</button>&nbsp;',
+                // '<button lay-event="import" class="layui-btn layui-btn-sm layui-btn-warm icon-btn"><i class="layui-icon">&#xe681;</i>导入</button>',
+                '<button lay-event="add" class="layui-btn layui-btn-sm icon-btn"><i class="layui-icon">&#xe654;</i>添加</button>&nbsp;',
+                '<button lay-event="import" class="layui-btn layui-btn-sm layui-btn-warm icon-btn"><i class="layui-icon">&#xe681;</i>导入</button>',
+                '</p>'].join(''),
+            cellMinWidth: 100,
+            // totalRow: true,
+            done: function (res, curr, count) {
+
+                // getSites();
+                // lineChartInit(res.lineData.legendData, res.lineData.xAxisData, res.lineData.seriesData);
+
+            },
+            cols: [[
+                // {type: 'checkbox'},
+                // {type: 'numbers'},
+                /*
+                                {field: 'itemsName', title: '站点', sort: true, totalRowText: '合计'},
+                                {field: 'job_number', title: '工号', sort: true, width : 70, totalRow: true},
+                                {field: 'ad_account', title: '广告账户', sort: true, totalRow: true},
+                */
+
+
+                /*
+                                {field: 'source', title: '广告渠道', sort: true, totalRowText: '全部页汇总'},
+                                {field: 'revenue', title: '收入', sort: true},
+                                {field: 'cost', title: '广告成本', sort: true},
+                */
+
+                // {field: 'roas', title: 'ROAS', sort: true},
+                // {field: 'costProportion', title: '广告成本占比', sort: true},
+
+
+
+
+                {field: 'month', title: '月份', width:85},
+                {field: 'itemsName', title: '站点名称'},
+                {field: 'logisticCost', title: '物流成本'
+                    ,templet: function (d) {
+                        return '<span style="color:#666666;">' + '$' + d.logisticCost + '</span>';
+                    }
+                },
+                // {field: 'logisticCostRatio', title: '物流成本占比'},
+                {field: 'goodsCost', title: '商品成本'
+                    ,templet: function (d) {
+                        return '<span style="color:#666666;">' + '$' + d.goodsCost + '</span>';
+                    }
+                },
+                // {field: 'goodsCostRatio', title: '商品成本占比'},
+                {field: 'operateCost', title: '运营成本'
+                    ,templet: function (d) {
+                        return '<span style="color:#666666;">' + '$' + d.operateCost + '</span>';
+                    }
+                },
+                // {field: 'operateCostRatio', title: '运营成本占比'},
+                {field: 'refund', title: '退款'
+                    ,templet: function (d) {
+                        return '<span style="color:#666666;">' + '$' + d.refund + '</span>';
+                    }
+                },
+                // {field: 'refundRate', title: '退款率'},
+                {field: 'toolCost', title: '工具成本'
+                    ,templet: function (d) {
+                        return '<span style="color:#666666;">' + '$' + d.toolCost + '</span>';
+                    }
+                },
+                // {field: 'toolCostRatio', title: '工具成本占比'},
+                {field: 'passCost', title: '通道成本'
+                    ,templet: function (d) {
+                        return '<span style="color:#666666;">' + '$' + d.passCost + '</span>';
+                    }
+                },
+                // {field: 'passCostRatio', title: '通道成本占比'},
+
+
+
+                // {field: 'profit', title: '利润'},
+                // {field: 'xxx', title: '利润率'},
+                // {field: 'create_time', title: '日期', width : 100},
+                {title: '操作', toolbar: '#userTbBar', align: 'center', fixed: 'right', width: 120}
+            ]]
+        });
+
+
+        /* 表格搜索 */
+        form.on('submit(userTbSearch)', function (data) {
+            insTb.reload({where: data.field, page: {curr: 1}});
+            return false;
+        });
+
+
+        // 清空
+        form.on('submit(clearBtn)', function (data) {
+
+            console.log("清空...")
+            //执行清空
+            $("#itemsId").empty();
+            $("#jobNumber").empty();
+            $("#adAccount").empty();
+            // $("#adChannels").empty();
+            $("#adChannels").val("");
+            $("#searchTime").val(""); // 清空日期
+            // form.render("select");
+
+            // layui.form.render("select");//重新渲染 固定写法
+
+            getSites(sitesData);
+
+
+            form.render("select");//重新渲染 固定写法
+
+        });
+
+        /* 表格工具条点击事件 */
+        table.on('tool(channelDataTable)', function (obj) {
+            if ('edit' === obj.event) { // 修改
+                showEditModel(obj.data);
+            } else if ('del' === obj.event) { // 删除
+                doDel(obj);
+            } else if ('reset' === obj.event) { // 重置密码
+                admin.prompt({formType: 1, title: '请输入密码'}, function (value, i) {
+                    layer.close(i);
+                    var loadIndex = layer.load(2);
+                    $.post('user/psw/reset', {id: obj.data.userId, password: value}, function (res) {
+                        layer.close(loadIndex);
+                        if (0 === res.code) {
+                            layer.msg(res.msg, {icon: 1});
+                        } else {
+                            layer.msg(res.msg, {icon: 2, anim: 6});
+                        }
+                    });
+                });
+            }
+        });
+
+        /* 表格头工具栏点击事件 */
+        table.on('toolbar(channelDataTable)', function (obj) {
+            if ('add' === obj.event) { // 添加
+                // console.log("obj obj obj:"+JSON.stringify(obj))
+                showEditModel();
+                var itemId = $("#item_id").val();
+                console.log("....1.11...itemId："+itemId)
+
+            } /*else if ('del' === obj.event) { // 删除
+                var checkRows = table.checkStatus('channelDataTable');
+                if (!checkRows || !checkRows.data || 0 === checkRows.data.length) {
+                    return layer.msg('请选择要删除的数据', {icon: 2, anim: 6});
+                }
+                var ids = checkRows.data.map(function (d) {
+                    return d.userId;
+                });
+                doDel({ids: ids});
+            }*/ else if ('editOverall' === obj.event) {
+                showEditOverallModel();
+            } else if ('import' === obj.event) {
+                showImport();
+            }
+        });
+
+        var vv;
+        function initVue(){
+            vv = new Vue({
+                el: '#editForm',
+                data: {
+                    logisticCostValue: '',
+                    logisticCostClass: 'layui-input',
+                    logisticCostReadonly: false,
+
+                    toolCostValue: '',
+                    toolCostClass: 'layui-input',
+                    toolCostReadonly: false,
+
+                    goodsCostValue: '',
+                    goodsCostClass: 'layui-input',
+                    goodsCostReadonly: false,
+
+                    passCostValue: '',
+                    passCostClass: 'layui-input',
+                    passCostReadonly: false,
+
+                    operateCostValue: '',
+                    operateCostClass: 'layui-input',
+                    operateCostReadonly: false,
+
+                    refundValue: '',
+                    refundClass: 'layui-input',
+                    refundReadonly: false,
+                },
+                updated : function(){
+
+                    var logisticCostRatio = document.getElementById("logisticCostRatio").value;
+                    console.log("修改的我执行了logisticCostRatio:"+logisticCostRatio);
+                    console.log("修改的我执行了logisticCostRatio2:"+this.logisticCostValue);
+
+
+                    var toolCostRatio = document.getElementById("toolCostRatio").value;
+                    console.log("修改的我执行了toolCostRatio:"+toolCostRatio);
+                    console.log("修改的我执行了toolCostRatio2:"+this.toolCostValue);
+
+                    var val = this.logisticCostValue;
+                    if(val){
+                        console.log("get logisticCostValues 我又执行了:"+val);
+                        val = initThis(this, val);
+                        document.getElementById("logisticCostRatio").value = val;
+                    }
+
+                    var val = this.toolCostValue;
+                    if(val){
+                        console.log("get toolCostValues 我又执行了:"+val);
+                        val = initThis(this, val);
+                        document.getElementById("toolCostRatio").value = val;
+                    }
+
+                    var val = this.goodsCostValue;
+                    if(val){
+                        console.log("get goodsCostValues 我又执行了:"+val);
+                        val = initThis(this, val);
+                        document.getElementById("goodsCostRatio").value = val;
+                    }
+
+                    var val = this.passCostValue;
+                    if(val){
+                        console.log("get passCostValues 我又执行了:"+val);
+                        val = initThis(this, val);
+                        document.getElementById("passCostRatio").value = val;
+                    }
+
+                    var val = this.operateCostValue;
+                    if(val){
+                        console.log("get operateCostValues 我又执行了:"+val);
+                        val = initThis(this, val);
+                        document.getElementById("operateCostRatio").value = val;
+                    }
+
+                    var val = this.refundValue;
+                    if(val){
+                        console.log("get refundValues 我又执行了:"+val);
+                        val = initThis(this, val);
+                        document.getElementById("refundRate").value = val;
+                    }
+
+                    // this.computed.toolCostValues.get();
+
+
+
+                },
+                computed: {
+                    logisticCostValues: {
+                        get: function () {
+
+
+                            console.log("get logisticCostValue:"+this.logisticCostValue);
+                            console.log("get toolCostValue:"+this.toolCostValue);
+                            console.log("get goodsCostValue:"+this.goodsCostValue);
+
+
+                            var val = this.logisticCostValue;
+                            // if(val){
+                                console.log("get logisticCostValues 我又执行了:"+val);
+                                val = initThis(this, val);
+                            // }
+                            return val
+                        }
+                    },
+                    toolCostValues: {
+                        get: function () {
+                            var val = this.toolCostValue;
+                            // if(val){
+                                console.log("get toolCostValues 我又执行了:"+val);
+                                val = initThis(this, val);
+                            // }
+                            return val
+                        }
+                    },
+                    goodsCostValues: {
+                        get: function () {
+                            var val = this.goodsCostValue;
+                            // if(val){
+                                val = initThis(this, val);
+                            // }
+                            return val
+                        }
+                    },
+                    passCostValues: {
+                        get: function () {
+                            var val = this.passCostValue;
+                            // if(val){
+                                val = initThis(this, val);
+                            // }
+                            return val
+                        }
+                    },
+                    operateCostValues: {
+                        get: function () {
+                            var val = this.operateCostValue;
+                            // if(val){
+                                val = initThis(this, val);
+                            // }
+                            return val
+                        }
+                    },
+                    refundValues: {
+                        get: function () {
+                            var val = this.refundValue;
+                            // if(val){
+                                val = initThis(this, val);
+                            // }
+                            return val
+                        }
+                    },
+                }
+            })
+        }
+
+
+        function initEditVue(data){
+            vv = new Vue({
+                el: '#editForm',
+                data: {
+                    logisticCostValue: '',
+                    // logisticCostClass: 'layui-input',
+                    logisticCostClass: 'layui-input',
+                    logisticCostReadonly: false,
+
+                    toolCostValue: '',
+                    toolCostClass: 'layui-input',
+                    toolCostReadonly: false,
+
+                    goodsCostValue: '',
+                    goodsCostClass: 'layui-input',
+                    goodsCostReadonly: false,
+
+                    passCostValue: '',
+                    passCostClass: 'layui-input',
+                    passCostReadonly: false,
+
+                    operateCostValue: '',
+                    operateCostClass: 'layui-input',
+                    operateCostReadonly: false,
+
+                    refundValue: '',
+                    refundClass: 'layui-input',
+                    refundReadonly: false,
+                },
+/*                updated : function(){
+
+                    console.log("+++++++++++updated data："+JSON.stringify(data));
+
+                    var logisticCostRatio = document.getElementById("logisticCostRatio").value;
+                    console.log("修改的我执行了logisticCostRatio:"+logisticCostRatio);
+                    console.log("修改的我执行了logisticCostRatio2:"+this.logisticCostValue);
+
+
+                    var toolCostRatio = document.getElementById("toolCostRatio").value;
+                    console.log("修改的我执行了toolCostRatio:"+toolCostRatio);
+                    console.log("修改的我执行了toolCostRatio2:"+this.toolCostValue);
+
+                    var val = this.logisticCostValue;
+                    if(val){
+                        console.log("get logisticCostValues 我又执行了:"+val);
+                        val = initThis(this, val);
+                        document.getElementById("logisticCostRatio").value = val;
+                    }
+
+                    var val = this.toolCostValue;
+                    if(val){
+                        console.log("get toolCostValues 我又执行了:"+val);
+                        val = initThis(this, val);
+                        document.getElementById("toolCostRatio").value = val;
+                    }
+
+                    var val = this.goodsCostValue;
+                    if(val){
+                        console.log("get goodsCostValues 我又执行了:"+val);
+                        val = initThis(this, val);
+                        document.getElementById("goodsCostRatio").value = val;
+                    }
+
+                    var val = this.passCostValue;
+                    if(val){
+                        console.log("get passCostValues 我又执行了:"+val);
+                        val = initThis(this, val);
+                        document.getElementById("passCostRatio").value = val;
+                    }
+
+                    var val = this.operateCostValue;
+                    if(val){
+                        console.log("get operateCostValues 我又执行了:"+val);
+                        val = initThis(this, val);
+                        document.getElementById("operateCostRatio").value = val;
+                    }
+
+                    var val = this.refundValue;
+                    if(val){
+                        console.log("get refundValues 我又执行了:"+val);
+                        val = initThis(this, val);
+                        document.getElementById("refundRate").value = val;
+                    }
+
+                    // this.computed.toolCostValues.get();
+
+
+
+                },*/
+
+                computed: {
+                    logisticCostValues: {
+
+                        get: function () {
+
+                            var val = this.logisticCostValue;
+                            console.log("+++++++++++computed logisticCostValues："+val);
+                            // val = 1000000;
+
+                            console.log("get logisticCostValue:"+this.logisticCostValue);
+                            console.log("get toolCostValue:"+this.toolCostValue);
+                            console.log("get goodsCostValue:"+this.goodsCostValue);
+
+                            var val = document.getElementById("logisticCost").value;
+                            console.log("get logisticCostValues 我又执行了:"+val);
+                            // if(val){
+                            //     val = initThis(this, data.logisticCost);
+                                val = initThis(this, val);
+                                console.log("get logisticCostValues 我又执行了2:"+val);
+                            // }
+
+                            return val
+                        },
+                        set: function(value){
+                            console.log("---------set logisticCostValues 正在修改:"+value);
+                        }
+
+                    },
+                    toolCostValues: {
+                        get: function () {
+                            var val = this.toolCostValue;
+
+                            console.log("+++++++++++computed toolCostValues："+val);
+                            var toolCostRatio = document.getElementById("toolCostRatio").value;
+                            console.log("+++++++++++computed toolCostRatio："+toolCostRatio);
+
+                            var val = document.getElementById("toolCost").value;
+                            // if(val){
+                                console.log("get toolCostValues 我又执行了:"+val);
+                                val = initThis(this, val);
+                            // }
+                            console.log("get toolCostValues 我又执行了2:"+val);
+                            return val
+                        }
+                    },
+                    goodsCostValues: {
+                        get: function () {
+                            var val = this.goodsCostValue;
+                            var val = document.getElementById("goodsCost").value;
+                            // if(val){
+                                val = initThis(this, val);
+                            // }
+                            return val
+                        }
+                    },
+                    passCostValues: {
+                        get: function () {
+                            var val = this.passCostValue;
+                            var val = document.getElementById("passCost").value;
+                            // if(val){
+                                val = initThis(this, val);
+                            // }
+                            return val
+                        }
+                    },
+                    operateCostValues: {
+                        get: function () {
+                            var val = this.operateCostValue;
+                            var val = document.getElementById("operateCost").value;
+                            // if(val){
+                                val = initThis(this, val);
+                            // }
+                            return val
+                        }
+                    },
+                    refundValues: {
+                        get: function () {
+                            var val = this.refundValue;
+                            var val = document.getElementById("refund").value;
+                            // if(val){
+                                val = initThis(this, val);
+                            // }
+                            return val
+                        }
+                    },
+
+
+
+                }
+
+            })
+        }
+
+        // 求百分比
+        function getPercent(num, total) {
+            num = parseFloat(num);
+            total = parseFloat(total);
+            if (isNaN(num) || isNaN(total)) {
+                return "";
+            }
+            return total <= 0 ? "0" : (Math.round(num / total * 10000) / 100.00)+"";
+        }
+
+        function Percentage(num, total) {
+            if (num == 0 || total == 0){
+                return 0;
+            }
+            return (Math.round(num / total * 10000) / 100.00);// 小数点后两位百分比
+        }
+
+        function initReadonly(obj){
+            $("#logisticCostRatio").attr("readonly", "readonly");
+            $("#logisticCostRatio").attr("class", "layui-input layui-disabled");
+
+            $("#toolCostRatio").attr("readonly", "readonly");
+            $("#toolCostRatio").attr("class", "layui-input layui-disabled");
+
+            $("#goodsCostRatio").attr("readonly", "readonly");
+            $("#goodsCostRatio").attr("class", "layui-input layui-disabled");
+
+            $("#passCostRatio").attr("readonly", "readonly");
+            $("#passCostRatio").attr("class", "layui-input layui-disabled");
+
+            $("#operateCostRatio").attr("readonly", "readonly");
+            $("#operateCostRatio").attr("class", "layui-input layui-disabled");
+
+            $("#refundRate").attr("readonly", "readonly");
+            $("#refundRate").attr("class", "layui-input layui-disabled");
+        }
+
+        // 初始化
+        function initThis(obj, val){
+
+            var logisticCost = document.getElementById("logisticCost").value;
+            var goodsCost = document.getElementById("goodsCost").value;
+            var operateCost = document.getElementById("operateCost").value;
+            var refund = document.getElementById("refund").value;
+            var toolCost = document.getElementById("toolCost").value;
+            var passCost = document.getElementById("passCost").value;
+
+            // 成本已填
+            if(obj.logisticCostValue.length > 0 || obj.toolCostValue.length > 0
+                || obj.goodsCostValue.length > 0 || obj.passCostValue.length > 0
+                || obj.operateCostValue.length > 0 || obj.refundValue.length > 0){
+
+                console.log("initThis 禁用:"+obj);
+
+                obj.logisticCostReadonly = true;
+                obj.logisticCostClass = 'layui-input layui-disabled'
+                obj.logisticCostValue = logisticCost;
+
+                obj.toolCostReadonly = true;
+                obj.toolCostClass = 'layui-input layui-disabled'
+                obj.toolCostValue = toolCost;
+
+                obj.goodsCostReadonly = true;
+                obj.goodsCostClass = 'layui-input layui-disabled';
+                obj.goodsCostValue = goodsCost;
+
+                obj.passCostReadonly = true;
+                obj.passCostClass = 'layui-input layui-disabled'
+                obj.passCostValue = passCost;
+
+                obj.operateCostReadonly = true;
+                obj.operateCostClass = 'layui-input layui-disabled'
+                obj.operateCostValue = operateCost;
+
+                obj.refundReadonly = true;
+                obj.refundClass = 'layui-input layui-disabled'
+                obj.refundValue = refund;
+
+                val = getPercent(val, revenue); // 获取百分比
+
+            }else{ // 成本未填
+                console.log("initThis 不禁用:"+obj);
+                obj.logisticCostReadonly = false
+                obj.logisticCostClass = 'layui-input'
+
+                obj.toolCostReadonly = false;
+                obj.toolCostClass = 'layui-input'
+
+                obj.goodsCostReadonly = false;
+                obj.goodsCostClass = 'layui-input'
+
+                obj.passCostReadonly = false;
+                obj.passCostClass = 'layui-input'
+
+                obj.operateCostReadonly = false;
+                obj.operateCostClass = 'layui-input'
+
+                obj.refundReadonly = false;
+                obj.refundClass = 'layui-input'
+            }
+
+            return val;
+        }
+
+        // 获取成本
+        function getRevenues(mData){
+            console.log("getRevenues："+JSON.stringify(mData))
+            // 判断是修改还是添加操作
+            var month = mData ? mData.month : getLastMonth(new Date().getTime());
+            // var itemsId = mData ? mData.itemsId : gaItemsList[0].value;
+            // var itemsId = mData ? $('#itemsId').val() : gaItemsList[0].value;
+            var itemsId = $('#itemsId').val();
+
+
+            console.log("month:"+month)
+            console.log("itemsId:"+itemsId)
+            console.log("itemsId2:"+gaItemsList[0].value)
+            admin.req('items/getRevenue', {month:month, itemsId:itemsId? itemsId : gaItemsList[0].value}, function (res) {
+                revenue = res.data.revenue.toFixed(2);
+
+
+            }, 'GET');
+        }
+
+
+        function initItems(){
+            var vue = new Vue({
+                el:'#itemsApp',
+                data:{
+                    gaItemsList:gaItemsList,
+                    gaItems:'',
+
+                },
+                methods:{
+                    getValue: function(){
+                    }
+                },
+
+            });
+        }
+
+
+        var revenue = 0;
+        /* 显示表单弹窗 */
+        function showEditModel(mData) {
+            admin.open({
+                type: 1,
+                // area: '620px',
+                offset: '20px',
+                title: (mData ? '修改' : '添加') + '站点成本',
+                content: $('#editFormDialog').html(),
+                success: function (layero, dIndex) {
+                    $(layero).children('.layui-layer-content').css('overflow', 'visible');
+
+                    initItems(); // 初始化站点
+
+                    console.log("showEditModel gaItemsList："+JSON.stringify(gaItemsList))
+
+/*
+                    // 修改
+                    if(mData){
+                        getRevenues(mData);
+                        initEditVue(mData);
+                        initReadonly();
+
+                    }else{
+                        getRevenues();
+                        initVue();
+                    }
+*/
+
+
+
+
+                    // 默认选中
+                    var options = document.getElementById('itemsId').children;
+                    if(options.length > 0){
+                        options[0].selected=true;
+                    }
+
+
+
+                    //年月选择器
+                    laydate.render({
+                        elem: '#addMonth'
+                        ,type: 'month'
+                        // ,value: getDate(new Date().getTime()-(86400000)) // 2020-04-01 - 2020-04-04
+                        ,value: getLastMonth(new Date().getTime()) // 2020-04-01 - 2020-04-04
+                        ,isInitValue: true
+                        // ,showBottom :false
+                        ,btns: ['confirm']
+                        ,done: function(value, date){
+                            console.log('....1你选择的日期是：' + value + '<br>获得的对象是' + JSON.stringify(date));
+                            $('#addMonth').val(value);
+                            console.log("+++itemsId："+$('#itemsId').val());
+                            var itemsId = $('#itemsId').val();
+                            // getRevenue(value, itemsId);
+                        }
+                    });
+
+                    // 回显表单数据
+                    form.val('editForm', mData);
+
+/*
+                    form.on("select", function(data){
+                        console.log("触发吧："+data.value)
+                        getRevenues(mData);
+
+                    });
+*/
+
+/*
+                    if(!mData){
+                        // var addMonth = $('#addMonth').val();
+                        // getRevenue(addMonth, "");
+                        initRatio(revenue); // 初始化占比
+                    }
+*/
+
+
+                    // 表单提交事件
+                    form.on('submit(editSubmit)', function (data) {
+
+                        console.log("JSON.stringify(data.field):"+JSON.stringify(data.field))
+                        var loadIndex = layer.load(2);
+                        admin.req(mData ? 'cost/update' : 'cost/add', data.field, function (res) {
+                            layer.close(loadIndex);
+                            if (0 === res.code) {
+                                layer.close(dIndex);
+                                layer.msg(res.msg, {icon: 1});
+                                insTb.reload({page: {curr: 1}});
+                            } else {
+                                layer.msg(res.msg, {icon: 2, anim: 6});
+                            }
+                        }, 'post');
+
+                        return false;
+                    });
+
+                    // 渲染多选下拉框
+                    /*
+                    var insRoleSel = xmSelect.render({
+                        el: '#userEditRoleSel',
+                        // name: 'userEditRoleSel',
+                        layVerify: 'required',
+                        layVerType: 'tips',
+                        // data: roleList
+                    });
+                    */
+                    // 回显选中角色
+                    /*if (mData && mData.roles) {
+                        insRoleSel.setValue(mData.roles.map(function (item) {
+                            return item.roleId;
+                        }));
+                    }*/
+                    // 禁止弹窗出现滚动条
+                    // $(layero).children('.layui-layer-content').css('overflow', 'visible');
+                }
+            });
+        }
+
+        // 获取收入
+        function getRevenue(month, itemId){
+
+            admin.req('items/getRevenue', {month:month, itemsId:itemId}, function (res) {
+                console.log("res:"+JSON.stringify(res))
+
+                revenue = res.data.revenue.toFixed(2);
+
+                console.log("revenue:"+revenue)
+
+                initRatio(revenue);
+
+            }, 'GET');
+        }
+
+        /* 删除 */
+        function doDel(obj) {
+            if (obj.ids) {
+                admin.confirm('确定要删除选中数据吗？', function (i) {
+                    layer.close(i);
+                    var loadIndex = layer.load(2);
+                    admin.req('cost/update', JSON.stringify(obj.ids), function (res) {
+                        layer.close(loadIndex);
+                        if (0 === res.code) {
+                            layer.msg(res.msg, {icon: 1});
+                            insTb.reload({page: {curr: 1}});
+                        } else {
+                            layer.msg(res.msg, {icon: 2, anim: 6});
+                        }
+                    }, 'post');
+                });
+            } else {
+                var loadIndex = layer.load(2);
+                // $.get('cost/delete', {id: obj.data.userId}, function (res) {
+                console.log("obj.data："+JSON.stringify(obj.data));
+                console.log("obj.data month："+JSON.stringify(obj.data.month));
+
+                $.get('cost/delete', {month: obj.data.month, cost_id: obj.data.cost_id}, function (res) {
+                    layer.close(loadIndex);
+                    if (0 === res.code) {
+                        layer.msg(res.msg, {icon: 1});
+                        insTb.reload({page: {curr: 1}});
+                    } else {
+                        layer.msg(res.msg, {icon: 2, anim: 6});
+                    }
+                });
+
+            }
+        }
+
+        /* 修改用户状态 */
+        /*
+        form.on('switch(userTbStateCk)', function (obj) {
+            var loadIndex = layer.load(2);
+            $.post('user/state/update', {
+                id: obj.elem.value,
+                state: obj.elem.checked ? 0 : 1
+            }, function (res) {
+                layer.close(loadIndex);
+                if (0 === res.code) {
+                    layer.msg(res.msg, {icon: 1});
+                } else {
+                    layer.msg(res.msg, {icon: 2, anim: 6});
+                    $(obj.elem).prop('checked', !obj.elem.checked);
+                    form.render('checkbox', $('#channelDataTable').next().attr('lay-filter'));
+                }
+            });
+        });
+*/
+
+        /* 导入excel */
+        function showImport() {
+            admin.open({
+                type: 1,
+                title: '导入站点成本',
+                content: ['<div style="padding: 20px 0 10px 0;text-align: center;" class="layui-text">',
+                    '         <div id="userUploadDrag" class="layui-upload-drag" style="margin-bottom: 10px;">',
+                    '            <i class="layui-icon">&#xe681;</i>',
+                    '            <p>点击上传，或将文件拖拽到此处</p>',
+                    '         </div>',
+                    '         <div><a href="${ctxPath}/assets/file/站点成本导入模板.xlsx" target="_blank" download>下载模板</a></div>',
+                    '      </div>'].join(''),
+                success: function (layero, dIndex) {
+                    layui.upload.render({
+                        elem: '#userUploadDrag',
+                        url: 'cost/import',
+                        accept: 'file',
+                        exts: 'xls|xlsx',
+                        before: function (obj) {
+                            layer.load(2);
+                        },
+                        done: function (res) {
+                            layer.closeAll('loading');
+                            console.log("showImport res："+JSON.stringify(res))
+                            if (0 === res.code) {
+                                // layer.msg(res.msg, {icon: 1});
+                                layer.close(dIndex);
+                                admin.alert(res.msg.replace(/\r\n/g, '<br/>'), {icon: 1, anim: 6, title: '导入完成'});
+                                insTb.reload({page: {curr: 1}});
+                            } else {
+                                admin.alert(res.msg.replace(/\r\n/g, '<br/>'), {icon: 2, anim: 6, title: '导入失败'});
+                            }
+                        },
+                        error: function () {
+                            layer.msg('导入失败', {icon: 2, anim: 6});
+                            layer.closeAll('loading');
+                        }
+                    });
+                }
+            });
+        }
+
+
+
+        // 日期范围
+        laydate.render({
+            elem: '#searchTime'
+            ,type: 'month'
+            ,range: true
+            // ,eventElem: '#searchSubmitMenu'
+            // ,trigger: 'click'
+            ,value: getDate(new Date().getTime()-(31536000000)) +" - "+ getDate(new Date().getTime()-(86400000)) // 2020-04-01 - 2020-04-04
+            ,isInitValue: true
+            ,done: function(value, date){
+                console.log('你选择的日期是：' + value + '<br>获得的对象是' + JSON.stringify(date));
+                $('#searchTime').val(value);
+
+            }
+        });
+
+        function getDate(timeStamp){
+            var date = new Date(timeStamp);
+
+            var year = date.getFullYear(); //获取完整的年份(4位)
+
+            var month = date.getMonth() + 1; //获取当前月份(0-11,0代表1月)
+            month = month<10?"0"+month:month
+
+            var date = date .getDate(); //获取当前日(1-31)
+            date = date<10?"0"+date:date
+
+            // var result = year + "-" + month + "-" + date;
+            var result = year + "-" + month;
+
+            return result;
+        }
+
+
+        var sitesData;
+        function getSites(sitesParam){
+
+            console.log("sitesData:"+JSON.stringify(sitesParam))
+
+
+            // if(sitesParam){ // 清空不需要请求接口重新获取
+            if(0){ // 清空不需要请求接口重新获取
+
+                console.log("不需要请求接口...")
+                sites = sitesParam;
+/*
+                var $select = $('[lay-filter="searchForm"] select[name="item_id"]');
+                $select.html('<option value="">请选择</option>');
+                for (var i = 0; i < sites.length; i++) {
+                    $select.append('<option value="' + sites[i].id + '">' + sites[i].item_name + '</option>');
+                }
+*/
+                var $select2 = $('[lay-filter="editForm"] select[name="item_id"]');
+                console.log("select2："+JSON.stringify($select2))
+                $select2.html('<option value="">请选择</option>');
+                for (var i = 0; i < sites.length; i++) {
+                    // $select2.append('<option value="' + sites[i].id + '">' + sites[i].item_name + '</option>');
+                    $select2.append('<option value="' + sites[i].itemsId + '">' + sites[i].itemsName + '</option>');
+                }
+
+                form.on('select(item_id)', function(data){
+
+                    console.log("选择了item_id2："+JSON.stringify(data))
+                    console.log("选择了item_id22："+data.value)
+                });
+
+                // initVue();
+
+
+                // getJobNumber(sites);
+
+                layui.form.render("select");//重新渲染 固定写法
+
+            }else{ // 初始化
+
+                console.log("请求接口...")
+                // admin.req('itemsData/getSite', {}, function (res) {
+                admin.req('items/getSite', {}, function (res) {
+                    // admin.removeLoading('div[lay-hash="/system/lzgame"]');
+
+                    sites = JSON.parse(res.data);
+                    console.log("sitesData:"+JSON.stringify(sites))
+
+                    sitesData = sites;
+
+                    console.log("获取全部站点1："+JSON.stringify(sites))
+                    console.log("类型是："+typeof sites)
+
+
+/*
+                    // var $select = $('[lay-filter="searchForm"] select[name="itemsIdSearch"]');
+                    var $select = $('[lay-filter="searchForm"] select[name="itemsId"]');
+                    console.log("select："+JSON.stringify($select))
+                    $select.html('<option value="">请选择</option>');
+                    for (var i = 0; i < sites.length; i++) {
+                        $select.append('<option value="' + sites[i].id + '">' + sites[i].item_name + '</option>');
+                    }
+*/
+
+                    var $select2 = $('[lay-filter="editForm"] select[name="item_id"]');
+                    console.log("select2："+JSON.stringify($select2))
+                    $select2.html('<option value="">请选择</option>');
+                    for (var i = 0; i < sites.length; i++) {
+
+                        $select2.append('<option value="' + sites[i].itemsId + '">' + sites[i].itemsName + '</option>');
+                    }
+
+                    form.on('select(item_id)', function(data){
+
+                        // initVue();
+                        console.log("选择了item_id1："+JSON.stringify(data))
+
+                        var addMonth = $('#addMonth').val();
+                        console.log("--------addMonth："+addMonth)
+
+                        getRevenue(addMonth, data.value);
+
+
+                    });
+
+                    // initVue();
+
+                    // getJobNumber(sites);
+                    layui.form.render("select");//重新渲染 固定写法
+
+                }, 'get');
+            }
+        }
+
+
+        function initRatio(revenue){
+            var logisticCost = document.getElementById("logisticCost").value;
+            console.log("1--------logisticCost："+logisticCost)
+            var logisticCostValue = getPercent(logisticCost, revenue);
+            console.log("2--------logisticCost："+logisticCostValue)
+            document.getElementById("logisticCostRatio").value = logisticCostValue;
+
+            var toolCost = document.getElementById("toolCost").value;
+            console.log("1--------toolCost："+toolCost)
+            var toolCostValue = getPercent(toolCost, revenue);
+            console.log("2--------toolCost："+toolCostValue)
+            document.getElementById("toolCostRatio").value = toolCostValue;
+
+            var goodsCost = document.getElementById("goodsCost").value;
+            var goodsCostValue = getPercent(goodsCost, revenue);
+            document.getElementById("goodsCostRatio").value = goodsCostValue;
+
+            var passCost = document.getElementById("passCost").value;
+            var passCostValue = getPercent(passCost, revenue);
+            document.getElementById("passCostRatio").value = passCostValue;
+
+            var operateCost = document.getElementById("operateCost").value;
+            var operateCostValue = getPercent(operateCost, revenue);
+            document.getElementById("operateCostRatio").value = operateCostValue;
+
+            var refund = document.getElementById("refund").value;
+            var refundValue = getPercent(refund, revenue);
+            document.getElementById("refundRate").value = refundValue;
+        }
+
+
+/*
+        $(function(){
+            getSites(); // 加载站点
+        })
+*/
+
+
+
+
+    });
+
+
+</script>
+</body>
+</html>

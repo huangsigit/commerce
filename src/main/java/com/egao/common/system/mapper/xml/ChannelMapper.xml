@@ -1,0 +1,313 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.egao.common.system.mapper.ChannelMapper">
+
+    <select id="selectChannel" resultType="java.util.HashMap">
+        select *,source_name sourceName from ga_channel where 1 = 1
+        <if test="keyword!=null and keyword!=''">
+            and id like '%${keyword}%'
+            or name like '%${keyword}%'
+        </if>
+        limit #{page}, #{rows}
+    </select>
+
+
+    <select id="selectChannelCount" resultType="java.lang.Integer">
+        select count(*) from ga_channel
+        <if test="keyword!=null and keyword!=''">
+            where id like '%${keyword}%'
+            or name like '%${keyword}%'
+        </if>
+    </select>
+
+
+    <select id="selectChannelList" resultType="java.util.HashMap">
+        select channel.id value,channel.source_name name from ga_channel channel where channel.type = 0
+    </select>
+
+
+
+<!--
+    <select id="selectCanBindChannel" resultType="java.util.HashMap">
+        select ads.source value,ads.source name from (
+            select * from ga_ad ad group by source
+        )ads LEFT JOIN ga_channel channel on channel.source = ads.source where channel.source is null
+    </select>
+-->
+
+    <select id="selectCanBindChannel" resultType="java.util.HashMap">
+        select ad.source value,ad.source name from ga_ad ad LEFT JOIN ga_channel channel on ad.source = channel.source
+        where 1 = 1
+        <choose>
+            <when test="channelId!=null and channelId!= ''">
+                and channel.parent_id = #{channelId}
+            </when>
+            <otherwise>
+                and channel.id is null
+            </otherwise>
+        </choose>
+        GROUP BY ad.source
+    </select>
+
+
+    <select id="selectChannelById" resultType="java.util.HashMap">
+        select * from ga_channel where id = #{id}
+    </select>
+
+
+    <select id="selectChannelByParentId" resultType="java.util.HashMap">
+        select * from ga_channel where parent_id = #{parentId}
+    </select>
+
+
+
+    <insert id="insertChannel" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        <selectKey resultType="int" order="AFTER" keyProperty="id">
+            SELECT LAST_INSERT_ID() as id
+        </selectKey>
+        insert into ga_channel(parent_id, source_name, source, type) values(#{parent_id}, #{source_name}, #{source}, #{type})
+    </insert>
+
+    <update id="updateChannel">
+        update ga_channel
+        <set>
+            <if test="parent_id!=null and parent_id!=''">
+                parent_id = #{parent_id},
+            </if>
+            <if test="source_name!=null and source_name!=''">
+                source_name = #{source_name},
+            </if>
+            <if test="source!=null and source!=''">
+                source = #{source},
+            </if>
+            <if test="type!=null and type!=''">
+                type = #{type}
+            </if>
+        </set>
+        where id = #{id}
+    </update>
+
+
+    <delete id="deleteById">
+        delete from ga_channel where id = #{id}
+    </delete>
+
+
+    <delete id="deleteByParentId">
+        delete from ga_channel where parent_id = #{parentId}
+    </delete>
+
+
+    <!--获取当月站点收入-->
+    <select id="selectChannelCost" resultType="java.util.HashMap">
+        select date_format(ad.create_time, '%Y-%m') month,ad.items_id,sum(ad.revenue) revenue,item.item_id from ga_ad ad left JOIN ga_item item
+        on item.ad_account = ad.ad_account
+        and IF(ad.ad_account = '(not set)', item.item_id = ad.items_id, 1 = 1)
+        where 1 = 1
+        <if test="itemsId!=null and itemsId!=''">
+            and ad.items_id = #{itemsId}
+        </if>
+        <if test="startTime!=null and endTime!=''">
+            and ad.create_time BETWEEN #{startTime} and #{endTime}
+        </if>
+        group by month,item.item_id
+        order by month desc
+    </select>
+
+
+    <!--获取当月渠道收入-->
+    <select id="selectChannelRevenue" resultType="java.util.HashMap">
+        select
+        date_format(ai.create_time, '%Y-%m') month
+        ,channel.parent_id channelId, channel.source_name sourceName
+        ,sum(ai.revenue) revenue,sum(ai.cost) cost
+        from(
+            select ad.*
+            ,(case when item.item_id is null then ad.items_id else item.item_id end) as itemsId
+            from
+            ga_ad ad left JOIN ga_item item
+            on item.ad_account = ad.ad_account
+            and IF(ad.ad_account = '(not set)', item.item_id = ad.items_id, 1 = 1)
+            where 1 = 1
+            <if test="jobNumber!=null and jobNumber!=''">
+                and ad.job_number = #{jobNumber}
+            </if>
+            <if test="adAccount!=null and adAccount!=''">
+                and ad.ad_account = #{adAccount}
+            </if>
+            <if test="startTime!=null and endTime!=''">
+                and ad.create_time BETWEEN #{startTime} and #{endTime}
+            </if>
+        )ai LEFT JOIN ga_channel channel
+        on channel.source = ai.source
+        where 1 = 1
+        <if test="itemsId!=null and itemsId!=''">
+            and ai.itemsId = #{itemsId}
+        </if>
+        <choose>
+            <when test="channelId==0 and channelId!=''">
+                and channel.parent_id is null
+            </when>
+            <when test="channelId!=null and channelId!=''">
+                and channel.parent_id = #{channelId}
+            </when>
+        </choose>
+        group by month,channelId
+        order BY month desc
+    </select>
+
+
+
+
+
+    <select id="selectChannelDataCount" resultType="java.lang.Integer">
+        select count(*) from(
+            select
+            ai.month,sum(ai.revenue) revenue,sum(ai.cost) cost
+            ,channel.parent_id channelId,channel.source_name sourceName
+            from(
+            select ad.*,date_format(ad.create_time, '%Y-%m') month
+            ,(case when item.item_id is null then ad.items_id else item.item_id end) as itemsId
+            ,item.ad_account itemAdAccount
+            from ga_ad ad
+            LEFT JOIN ga_item item on item.ad_account = ad.ad_account
+            and IF(ad.ad_account = '(not set)', item.item_id = ad.items_id, 1 = 1)
+            where 1 = 1
+            <if test="jobNumber!=null and jobNumber!=''">
+                and ad.job_number = #{jobNumber}
+            </if>
+            <if test="adAccount!=null and adAccount!=''">
+                and ad.ad_account = #{adAccount}
+            </if>
+            <if test="startTime!=null and endTime!=''">
+                and ad.create_time BETWEEN #{startTime} and #{endTime}
+            </if>
+            )ai LEFT JOIN ga_channel channel on channel.source = ai.source
+            where 1 = 1
+            <if test="itemsId!=null and itemsId!=''">
+                and ai.itemsId = #{itemsId}
+            </if>
+            <choose>
+                <when test="channelId==0 and channelId!=''">
+                    and channel.parent_id is null
+                </when>
+                <when test="channelId!=null and channelId!=''">
+                    and channel.parent_id = #{channelId}
+                </when>
+            </choose>
+            GROUP BY channel.parent_id,ai.month
+        )counts
+    </select>
+
+<!--
+    <select id="selectChannelData" resultType="java.util.HashMap">
+        select
+        ai.month,sum(ai.revenue) revenue,sum(ai.cost) cost
+        ,channel.parent_id channelId,channel.source_name sourceName
+        from(
+            select ad.*,date_format(ad.create_time, '%Y-%m') month
+            ,(case when item.item_id is null then ad.items_id else item.item_id end) as itemsId /*站点绑定处理*/
+            ,item.ad_account itemAdAccount
+            from ga_ad ad
+            LEFT JOIN ga_item item on item.ad_account = ad.ad_account
+            and IF(ad.ad_account = '(not set)', item.item_id = ad.items_id, 1 = 1) /*无广告账户处理*/
+            where 1 = 1
+            <choose>
+                <when test="jobNumber=='无工号'">
+                    and LENGTH(trim(ad.job_number)) = 0 /*无工号*/
+                </when>
+                <when test="jobNumber!=null and jobNumber!=''">
+                    and ad.job_number = #{jobNumber} /*有工号*/
+                </when>
+            </choose>
+            <if test="adAccount!=null and adAccount!=''">
+                and ad.ad_account = #{adAccount}
+            </if>
+            <if test="startTime!=null and endTime!=''">
+                and ad.create_time BETWEEN #{startTime} and #{endTime}
+            </if>
+        )ai LEFT JOIN ga_channel channel on channel.source = ai.source
+        where 1 = 1
+        <if test="itemsId!=null and itemsId!=''">
+            and ai.itemsId = #{itemsId}
+        </if>
+        <choose>
+            <when test="channelId==0 and channelId!=''">
+                and channel.parent_id is null /*其他*/
+            </when>
+            <when test="channelId!=null and channelId!=''">
+                and channel.parent_id = #{channelId}
+            </when>
+        </choose>
+        GROUP BY channel.parent_id,ai.month
+        ORDER BY revenue desc
+    </select>
+-->
+
+
+
+    <select id="selectChannelData" resultType="java.util.HashMap">
+        select
+        aic.month,aic.create_time
+        ,aic.channelId
+        ,aic.channelName
+        ,sum(aic.revenue) revenue,sum(aic.cost) cost
+        ,sum(channelCost.cost) channelCost
+        from(
+
+            select
+            ai.itemsId
+            ,ai.month,ai.create_time,sum(ai.revenue) revenue,sum(ai.cost) cost
+            ,channel.parent_id channelId,channel.source_name channelName
+            from(
+                select ais.* from(
+                        select ad.*,date_format(ad.create_time, '%Y-%m') month
+                        ,(case when item.item_id is null then ad.items_id else item.item_id end) as itemsId /*站点绑定处理*/
+                        ,item.ad_account itemAdAccount
+                        from ga_ad ad
+                        LEFT JOIN ga_item item on item.ad_account = ad.ad_account
+                        and IF(ad.ad_account = '(not set)', item.item_id = ad.items_id, 1 = 1) /*无广告账户处理*/
+                        where 1 = 1
+                        <choose>
+                            <when test="jobNumber=='无工号'">
+                                and LENGTH(trim(ad.job_number)) = 0 /*无工号*/
+                            </when>
+                            <when test="jobNumber!=null and jobNumber!=''">
+                                and ad.job_number = #{jobNumber} /*有工号*/
+                            </when>
+                        </choose>
+                        <if test="adAccount!=null and adAccount!=''">
+                            and ad.ad_account = #{adAccount}
+                        </if>
+                        <if test="startTime!=null and endTime!=''">
+                            and ad.create_time BETWEEN #{startTime} and #{endTime}
+                        </if>
+                )ais INNER JOIN
+                (
+                    select * from sys_user_item sui where sui.user_id = #{userId}
+                )ui on ui.item_id = ais.itemsId
+            )ai LEFT JOIN ga_channel channel on channel.source = ai.source
+            where 1 = 1
+            <if test="itemsId!=null and itemsId!=''">
+                and ai.itemsId = #{itemsId}
+            </if>
+            <choose>
+                <when test="channelId==0 and channelId!=''">
+                    and channel.parent_id is null /*其他*/
+                </when>
+                <when test="channelId!=null and channelId!=''">
+                    and channel.parent_id = #{channelId}
+                </when>
+            </choose>
+            GROUP BY channel.parent_id,ai.create_time
+            ORDER BY revenue desc
+        )aic LEFT JOIN
+        (
+            select dates,channel_id,item_id,sum(cost) cost from ga_channel_cost GROUP BY dates,channel_id
+        )channelCost on channelCost.channel_id = aic.channelId and channelCost.dates = aic.create_time
+        GROUP BY aic.channelId
+        order by revenue desc
+    </select>
+
+
+</mapper>
